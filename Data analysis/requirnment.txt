@@ -1,9 +1,19 @@
+Technologies Used
+1.Programming Language / Platform
+Python 3.8+
 
-# requirements.txt for GroceryProject Python script
-# Contains all dependencies needed to run main.py
+2️.Libraries / Packages
 pandas
 numpy
 sqlalchemy
 oracledb
 openpyxl
 matplotlib
+
+3️.Database
+
+Oracle 21c Express Edition
+
+4️.Files stored in the  same folder as your python code 
+
+Excel files (.xlsx) – customers.xlsx, products.xlsx, orders.xlsx
