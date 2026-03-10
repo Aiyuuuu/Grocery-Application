@@ -1,0 +1,9 @@
+
+# requirements.txt for GroceryProject Python script
+# Contains all dependencies needed to run main.py
+pandas
+numpy
+sqlalchemy
+oracledb
+openpyxl
+matplotlib
