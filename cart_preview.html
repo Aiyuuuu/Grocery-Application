@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>CartZen - Your Cellar</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&amp;family=Inter:wght@400;500;600&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "tertiary-fixed-dim": "#00cdeb",
+                        "on-secondary": "#005e40",
+                        "error": "#ff716c",
+                        "tertiary": "#77e6ff",
+                        "secondary-dim": "#57edb1",
+                        "on-error": "#490006",
+                        "error-container": "#9f0519",
+                        "primary-dim": "#58e7ab",
+                        "tertiary-container": "#00dcfd",
+                        "secondary-fixed": "#68fcbf",
+                        "surface-container-lowest": "#000000",
+                        "surface-container": "#1a1a1a",
+                        "on-surface": "#ffffff",
+                        "on-surface-variant": "#adaaaa",
+                        "on-primary-fixed-variant": "#006544",
+                        "on-primary-fixed": "#00452d",
+                        "primary-fixed": "#69f6b8",
+                        "on-error-container": "#ffa8a3",
+                        "on-secondary-container": "#e0ffec",
+                        "surface-bright": "#2c2c2c",
+                        "on-background": "#ffffff",
+                        "on-tertiary-fixed-variant": "#005360",
+                        "background": "#0e0e0e",
+                        "surface-container-highest": "#262626",
+                        "surface-tint": "#69f6b8",
+                        "on-primary": "#005a3c",
+                        "error-dim": "#d7383b",
+                        "primary-container": "#06b77f",
+                        "tertiary-fixed": "#00dcfd",
+                        "secondary-container": "#006c4b",
+                        "on-tertiary": "#005360",
+                        "surface-container-low": "#131313",
+                        "surface-dim": "#0e0e0e",
+                        "on-tertiary-container": "#004955",
+                        "inverse-primary": "#006d4a",
+                        "secondary": "#68fcbf",
+                        "surface-container-high": "#20201f",
+                        "on-primary-container": "#002919",
+                        "surface-variant": "#262626",
+                        "primary": "#69f6b8",
+                        "surface": "#0e0e0e",
+                        "on-tertiary-fixed": "#00343c",
+                        "outline-variant": "#484847",
+                        "inverse-on-surface": "#565555",
+                        "inverse-surface": "#fcf9f8",
+                        "tertiary-dim": "#00cdeb",
+                        "on-secondary-fixed-variant": "#006948",
+                        "secondary-fixed-dim": "#57edb1",
+                        "primary-fixed-dim": "#58e7ab",
+                        "on-secondary-fixed": "#004931",
+                        "outline": "#767575"
+                    },
+                    borderRadius: {
+                        "DEFAULT": "0.125rem",
+                        "lg": "0.25rem",
+                        "xl": "0.5rem",
+                        "full": "0.75rem"
+                    },
+                    fontFamily: {
+                        "headline": ["Plus Jakarta Sans"],
+                        "body": ["Inter"],
+                        "label": ["Inter"]
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        .glass-panel {
+            background-color: rgba(38, 38, 38, 0.6);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+        }
+        .btn-gradient {
+            background: linear-gradient(135deg, #69f6b8 0%, #06b77f 100%);
+        }
+        .ambient-shadow {
+            box-shadow: 0px 24px 48px rgba(105, 246, 184, 0.04);
+        }
+    </style>
+</head>
+<body class="bg-background text-on-surface font-body h-screen w-screen overflow-hidden flex flex-col items-center justify-center relative" data-alt="Dark, moody blurred luxury kitchen or pantry scene with warm subtle ambient lighting, deep shadows, and high-end materials like marble and dark wood, creating a rich atmospheric background." style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuBENjhaA8xTVa7fYjIs9fY2tIduf091-Ve90qbuAAt7fHmIMG3wiQQ0mAeIgWnVLHu77FArzKm57sQPKSYAZXVWL8Q_BhvX5LZnpMYS7oStnP9Gjq8hC10YZmjbsOsCugl7bRQJcrxWUNT5NuGEjpAscVbQaAdt-JKIMDU7XKiR9vvAlMcGv8aN6HQfOwY77TngEVjIg8iTIZaXkcVDwDrV7fI4KGYf5y4zylHsRmip21PRzvjlVwNzO7f2IuPnCYeu7nxCcA5IBufB'); background-size: cover; background-position: center; box-shadow: inset 0 0 0 2000px rgba(14, 14, 14, 0.85);">
+<main class="w-full max-w-7xl mx-auto h-[819px] py-8 px-8 flex flex-col gap-8 relative z-10">
+<aside class="w-full flex-shrink-0 flex flex-col">
+<div class="glass-panel rounded-xl p-8 flex flex-col gap-6 ambient-shadow border border-outline-variant/10">
+<h2 class="font-headline text-2xl font-bold text-on-surface border-b border-outline-variant/20 pb-4">Order Summary</h2>
+<div class="flex flex-col gap-4 font-body">
+<div class="flex justify-between text-on-surface-variant">
+<span>Subtotal</span>
+<span class="text-on-surface">$74.50</span>
+</div>
+<div class="flex justify-between text-on-surface-variant">
+<span>Shipping</span>
+<span class="text-primary">Free (Premium)</span>
+</div>
+<div class="flex justify-between text-on-surface-variant">
+<span>Taxes</span>
+<span class="text-on-surface">$6.15</span>
+</div>
+</div>
+<div class="pt-4 border-t border-outline-variant/20 flex justify-between items-end">
+<span class="font-headline text-on-surface text-lg">Total</span>
+<span class="font-headline text-[2.5rem] font-bold text-on-surface leading-none">$80.65</span>
+</div>
+<button class="btn-gradient w-full py-4 rounded-md font-label font-bold text-on-primary-container text-lg mt-4 flex items-center justify-center gap-2 hover:opacity-90 transition-opacity">
+                    Proceed to Checkout
+                    <span class="material-symbols-outlined">arrow_forward</span>
+</button>
+</div>
+</aside>
+<div class="flex-1 flex flex-col">
+<header class="mb-8 flex justify-between items-end">
+<div>
+<h1 class="font-headline text-[3.5rem] font-bold tracking-tight text-on-surface leading-none mb-2">Your Cellar</h1>
+<p class="font-body text-on-surface-variant text-lg">Curated selections awaiting checkout.</p>
+</div>
+<a class="font-label text-primary hover:text-primary-dim flex items-center gap-2 transition-colors" href="#">
+<span class="material-symbols-outlined text-sm">arrow_back</span>
+                    Continue Shopping
+                </a>
+</header>
+<div class="flex-1 overflow-hidden flex flex-col gap-4">
+<div class="bg-surface-container-low rounded-xl p-4 flex items-center gap-6 ambient-shadow hover:bg-surface-bright transition-colors duration-300 group">
+<div class="w-24 h-24 rounded-lg overflow-hidden relative bg-surface flex-shrink-0">
+<img alt="Midnight Truffle Set" class="w-full h-full object-cover" data-alt="Close-up of premium dark chocolate truffles in an elegant artisan box, rich dark tones, soft warm side lighting, high resolution, dark background." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDWwsQM6LKIY39_eOenI89v1v5dZjscS5PyfUSfLMMhbtlGzr2ynHVjRFholE8RWf2S9X0pSITpthMFaRp3k-QWR1-Gi6mXd-cR6cgXmSH_eT38hIxaF4kUzpfxcFuVmf86jtf98zzpEvMKlxBHvGq33A4mxvL-zvJTly-47oU4ABILMn7oNuA7ZK8LR3159Mlzqqet4Xz7VCk_jZUZDViQmqvdz30JWACcWtQsW7d_rtaMVJY9HYrSysNzhxjXUeg6rZSr9ZZGsbIN"/>
+</div>
+<div class="flex-1">
+<h3 class="font-headline text-xl font-semibold text-on-surface mb-1">Midnight Truffle Set</h3>
+<p class="font-body text-on-surface-variant text-sm">Artisanal 72% Cacao</p>
+</div>
+<div class="flex items-center gap-4 bg-surface-container rounded-md p-1 border border-outline-variant/20">
+<button class="w-8 h-8 flex items-center justify-center text-on-surface-variant hover:text-primary transition-colors"><span class="material-symbols-outlined text-sm">remove</span></button>
+<span class="font-label text-on-surface font-medium w-4 text-center">2</span>
+<button class="w-8 h-8 flex items-center justify-center text-on-surface-variant hover:text-primary transition-colors"><span class="material-symbols-outlined text-sm">add</span></button>
+</div>
+<div class="w-24 text-right">
+<span class="font-headline text-xl font-semibold text-on-surface">$48.00</span>
+</div>
+<button class="text-on-surface-variant hover:text-error transition-colors ml-2 opacity-0 group-hover:opacity-100">
+<span class="material-symbols-outlined">delete</span>
+</button>
+</div>
+<div class="bg-surface-container-low rounded-xl p-4 flex items-center gap-6 ambient-shadow hover:bg-surface-bright transition-colors duration-300 group">
+<div class="w-24 h-24 rounded-lg overflow-hidden relative bg-surface flex-shrink-0">
+<img alt="Wild Berry Medley" class="w-full h-full object-cover" data-alt="Vibrant fresh wild berries including raspberries and blueberries in a minimalist ceramic bowl, dark moody background, studio lighting highlighting freshness." src="https://lh3.googleusercontent.com/aida-public/AB6AXuAo9882z4kp5M5z1A7QBZT75Wbc9ueFVE2JF8_rGG_Y09iR8IDymY6XPz_PlhyYy0uWFbJPd2fOcKmN9AVm_epzIfQ1RP7PACVk-sbw6Q3Z4XhAfClbSLUtQvgnbF86Wwd7RAwr2Lph1eGEVlt5LJkE7DOYnF56ZpIDzAbNiUdToZiMtFqrDix59FPi6jvtWBrry7Imhl_Rr5vqN0or4a0ssMonSZ1fEJccxAsaIP-2-Qjah2Uy29sPaHguPugmIJCNevdLcq5jMg4R"/>
+</div>
+<div class="flex-1">
+<div class="flex items-center gap-3 mb-1">
+<h3 class="font-headline text-xl font-semibold text-on-surface">Wild Berry Medley</h3>
+<span class="bg-tertiary text-on-tertiary-fixed text-[10px] uppercase tracking-wider px-2 py-0.5 rounded-full font-label font-semibold">Organic</span>
+</div>
+<p class="font-body text-on-surface-variant text-sm">Locally Sourced, 16oz</p>
+</div>
+<div class="flex items-center gap-4 bg-surface-container rounded-md p-1 border border-outline-variant/20">
+<button class="w-8 h-8 flex items-center justify-center text-on-surface-variant hover:text-primary transition-colors"><span class="material-symbols-outlined text-sm">remove</span></button>
+<span class="font-label text-on-surface font-medium w-4 text-center">1</span>
+<button class="w-8 h-8 flex items-center justify-center text-on-surface-variant hover:text-primary transition-colors"><span class="material-symbols-outlined text-sm">add</span></button>
+</div>
+<div class="w-24 text-right">
+<span class="font-headline text-xl font-semibold text-on-surface">$14.50</span>
+</div>
+<button class="text-on-surface-variant hover:text-error transition-colors ml-2 opacity-0 group-hover:opacity-100">
+<span class="material-symbols-outlined">delete</span>
+</button>
+</div>
+<div class="bg-surface-container-low rounded-xl p-4 flex items-center gap-6 ambient-shadow hover:bg-surface-bright transition-colors duration-300 group">
+<div class="w-24 h-24 rounded-lg overflow-hidden relative bg-surface flex-shrink-0">
+<img alt="Artisanal Baguette" class="w-full h-full object-cover" data-alt="Crusty rustic artisan baguette cut in half on a dark slate board, warm directional light emphasizing texture, dark elegant setting." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBP8L5Rdsi-iJDKx7CwDPARWC24FaomWUzzVdax-nhh-H9z3HDUTXw6BGmGzqvUVthKMU85GTZ4iBe_UCtQy3Fa0m1DcyN4bAJRanPAkP70j4LquTRyDde6vTGY5ideHthmGvxYckKGDuj_2OcenEdECMCFCJP11z2st2KxlBWZDU0IPqG6BnPXQZ6t7PPgkPxuoLHZywQuQwPx2AunfHybeQj1_QqIOthhb5cnzfW2VxhJEOA6LIYtFrwrclPUfW19a2gpQG-t1VL7"/>
+</div>
+<div class="flex-1">
+<h3 class="font-headline text-xl font-semibold text-on-surface mb-1">Artisanal Baguette</h3>
+<p class="font-body text-on-surface-variant text-sm">Freshly Baked, Sourdough</p>
+</div>
+<div class="flex items-center gap-4 bg-surface-container rounded-md p-1 border border-outline-variant/20">
+<button class="w-8 h-8 flex items-center justify-center text-on-surface-variant hover:text-primary transition-colors"><span class="material-symbols-outlined text-sm">remove</span></button>
+<span class="font-label text-on-surface font-medium w-4 text-center">2</span>
+<button class="w-8 h-8 flex items-center justify-center text-on-surface-variant hover:text-primary transition-colors"><span class="material-symbols-outlined text-sm">add</span></button>
+</div>
+<div class="w-24 text-right">
+<span class="font-headline text-xl font-semibold text-on-surface">$12.00</span>
+</div>
+<button class="text-on-surface-variant hover:text-error transition-colors ml-2 opacity-0 group-hover:opacity-100">
+<span class="material-symbols-outlined">delete</span>
+</button>
+</div>
+</div>
+</div>
+</main>
+<div class="hidden md:hidden fixed bottom-0 left-0 w-full z-50 flex justify-around items-center px-4 pb-6 pt-2 bg-[#131313]/60 backdrop-blur-20px no-border bg-surface-container-low shadow-[0px_-24px_48px_rgba(16,185,129,0.04)] rounded-t-xl font-['Inter'] text-[10px] uppercase tracking-widest text-[#10B981]">
+<div class="flex flex-col items-center justify-center text-[#adaaaa] p-2 hover:text-white transition-all active:scale-90 duration-150">
+<span class="material-symbols-outlined mb-1" data-icon="storefront">storefront</span>
+<span>Shop</span>
+</div>
+<div class="flex flex-col items-center justify-center text-[#adaaaa] p-2 hover:text-white transition-all active:scale-90 duration-150">
+<span class="material-symbols-outlined mb-1" data-icon="auto_awesome">auto_awesome</span>
+<span>Curated</span>
+</div>
+<div class="flex flex-col items-center justify-center bg-[#1a1a1a] text-[#10B981] rounded-xl p-2 hover:text-white transition-all active:scale-90 duration-150">
+<span class="material-symbols-outlined mb-1" data-icon="shopping_cart">shopping_cart</span>
+<span>Cart</span>
+</div>
+<div class="flex flex-col items-center justify-center text-[#adaaaa] p-2 hover:text-white transition-all active:scale-90 duration-150">
+<span class="material-symbols-outlined mb-1" data-icon="person">person</span>
+<span>Account</span>
+</div>
+</div>
+</body></html>
