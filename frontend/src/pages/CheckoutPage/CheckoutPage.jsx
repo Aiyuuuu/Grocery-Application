@@ -2,11 +2,18 @@ import { useEffect, useMemo, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import MapComponent from '../../components/Addresses/MapComponent/MapComponent';
-import { clearCart } from '../../store/CartPage/cartSlice';
-import { selectCartDetails, selectCartTotals } from '../../store/selectors';
-import { UNIT_SCALE } from '../../constants/cart';
-import { loadAddresses, getDefaultAddress } from '../../utils/addresses';
+import { fetchCart } from '../../store/CartPage/cartSlice';
+import { selectCartItems } from '../../store/selectors';
+import { productsService, addressesService, ordersService } from '../../api/services';
+import { UNIT_SCALE, FREE_SHIPPING_THRESHOLD, STANDARD_SHIPPING, TAX_RATE } from '../../constants/cart';
 import styles from './CheckoutPage.module.css';
+
+function getDefaultAddress(addresses) {
+  if (!Array.isArray(addresses) || addresses.length === 0) {
+    return null;
+  }
+  return addresses.find((address) => address.isDefault) || addresses[0];
+}
 
 const paymentMethods = [
   {
@@ -32,22 +39,66 @@ const paymentMethods = [
 export default function CheckoutPage() {
   const dispatch = useDispatch();
   const navigate = useNavigate();
-  const cartDetails = useSelector(selectCartDetails);
-  const { subtotal, shipping, taxes, total } = useSelector(selectCartTotals);
+  const cartItems = useSelector(selectCartItems);
+  const [products, setProducts] = useState([]);
   const [addresses, setAddresses] = useState([]);
   const [selectedAddressId, setSelectedAddressId] = useState(null);
   const [selectedPayment, setSelectedPayment] = useState('cash');
   const [notes, setNotes] = useState('');
+  const [placingOrder, setPlacingOrder] = useState(false);
+  const [placeOrderError, setPlaceOrderError] = useState('');
+
+  useEffect(() => {
+    const fetchProducts = async () => {
+      try {
+        const productsData = await productsService.getProducts();
+        setProducts(productsData);
+      } catch (error) {
+        console.error('Failed to fetch products:', error);
+      }
+    };
+
+    fetchProducts();
+  }, []);
+
+  // Create a map of products by ID
+  const productsById = {};
+  products.forEach((product) => {
+    productsById[product.id] = product;
+  });
+
+  // Create cart details with product information
+  const cartDetails = cartItems
+    .map((item) => ({ item, product: productsById[item.id] }))
+    .filter((entry) => entry.product);
+
+  // Calculate totals
+  const subtotal = cartDetails.reduce((sum, { item, product }) => {
+    const multiplier = product.saleType === 'variable' ? item.quantity / UNIT_SCALE : item.quantity;
+    return sum + multiplier * product.price;
+  }, 0);
+
+  const shipping = subtotal > FREE_SHIPPING_THRESHOLD || subtotal === 0 ? 0 : STANDARD_SHIPPING;
+  const taxes = subtotal * TAX_RATE;
+  const total = subtotal + shipping + taxes;
 
   useEffect(() => {
     let active = true;
 
-    loadAddresses().then((loadedAddresses) => {
-      if (!active) return;
-      setAddresses(loadedAddresses);
-      const defaultAddress = getDefaultAddress(loadedAddresses);
-      setSelectedAddressId(defaultAddress?.id || null);
-    });
+    const loadAddresses = async () => {
+      try {
+        const loadedAddresses = await addressesService.list();
+        if (!active) return;
+        setAddresses(loadedAddresses);
+        const defaultAddress = getDefaultAddress(loadedAddresses);
+        setSelectedAddressId(defaultAddress?.id || null);
+      } catch (error) {
+        console.error('Failed to load addresses:', error);
+        setAddresses([]);
+      }
+    };
+
+    loadAddresses();
 
     return () => {
       active = false;
@@ -72,9 +123,29 @@ export default function CheckoutPage() {
     );
   }
 
-  const handlePlaceOrder = () => {
-    dispatch(clearCart());
-    navigate('/', { replace: false });
+  const handlePlaceOrder = async () => {
+    if (!selectedAddressId) {
+      setPlaceOrderError('Please select a delivery address to place the order.');
+      return;
+    }
+
+    try {
+      setPlacingOrder(true);
+      setPlaceOrderError('');
+
+      await ordersService.placeOrder({
+        addressId: selectedAddressId,
+        paymentMethod: selectedPayment,
+        deliveryNotes: notes,
+      });
+
+      await dispatch(fetchCart());
+      navigate('/orders', { replace: false });
+    } catch (error) {
+      setPlaceOrderError(error?.message || 'Failed to place order. Please try again.');
+    } finally {
+      setPlacingOrder(false);
+    }
   };
 
   return (
@@ -220,8 +291,20 @@ export default function CheckoutPage() {
               </div>
             )}
 
-            <button type="button" className={styles.placeOrderButton} onClick={handlePlaceOrder}>
-              Place Order
+            {placeOrderError && (
+              <p style={{ color: '#ffb4ab', marginBottom: '0.75rem', fontSize: '0.9rem' }} role="alert">
+                {placeOrderError}
+              </p>
+            )}
+
+            <button
+              type="button"
+              className={styles.placeOrderButton}
+              onClick={handlePlaceOrder}
+              disabled={placingOrder}
+              aria-busy={placingOrder}
+            >
+              {placingOrder ? 'Placing Order...' : 'Place Order'}
               <span className="material-symbols-outlined">arrow_forward</span>
             </button>
           </div>

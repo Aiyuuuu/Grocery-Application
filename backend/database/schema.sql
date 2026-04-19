@@ -1,0 +1,116 @@
+CREATE DATABASE IF NOT EXISTS grocery_app;
+USE grocery_app;
+
+CREATE TABLE IF NOT EXISTS users (
+  id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  first_name VARCHAR(60) NOT NULL,
+  last_name VARCHAR(60) NOT NULL,
+  email VARCHAR(190) NOT NULL UNIQUE,
+  password VARCHAR(255) NOT NULL,
+  role ENUM('customer', 'admin') NOT NULL DEFAULT 'customer',
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS categories (
+  id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  name VARCHAR(100) NOT NULL UNIQUE,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS products (
+  id VARCHAR(20) PRIMARY KEY,
+  name VARCHAR(255) NOT NULL,
+  description VARCHAR(500),
+  price DECIMAL(10, 2) NOT NULL,
+  image VARCHAR(500),
+  calories INT,
+  sale_type ENUM('fixed', 'variable') NOT NULL DEFAULT 'fixed',
+  unit VARCHAR(50) DEFAULT 'items',
+  unit_weight INT,
+  recommended BOOLEAN DEFAULT FALSE,
+  tags JSON,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  INDEX idx_recommended (recommended)
+);
+
+CREATE TABLE IF NOT EXISTS product_categories (
+  id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  product_id VARCHAR(20) NOT NULL,
+  category_id INT UNSIGNED NOT NULL,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE CASCADE,
+  FOREIGN KEY (category_id) REFERENCES categories(id) ON DELETE CASCADE,
+  UNIQUE KEY unique_product_category (product_id, category_id)
+);
+
+CREATE TABLE IF NOT EXISTS addresses (
+  id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  user_id BIGINT UNSIGNED NOT NULL,
+  label VARCHAR(100),
+  street_address VARCHAR(255) NOT NULL,
+  city VARCHAR(100) NOT NULL,
+  province VARCHAR(100),
+  postal_code VARCHAR(20),
+  phone_number VARCHAR(30),
+  delivery_instructions VARCHAR(500),
+  country VARCHAR(100) NOT NULL DEFAULT 'Pakistan',
+  latitude DECIMAL(10, 8),
+  longitude DECIMAL(11, 8),
+  is_default BOOLEAN DEFAULT FALSE,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+  INDEX idx_user_id (user_id)
+);
+
+CREATE TABLE IF NOT EXISTS cart_items (
+  id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  user_id BIGINT UNSIGNED NOT NULL,
+  product_id VARCHAR(20) NOT NULL,
+  quantity INT UNSIGNED NOT NULL,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+  FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE CASCADE,
+  UNIQUE KEY unique_user_product (user_id, product_id)
+);
+
+CREATE TABLE IF NOT EXISTS orders (
+  id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  user_id BIGINT UNSIGNED NOT NULL,
+  order_number VARCHAR(24) NOT NULL UNIQUE,
+  status ENUM('placed', 'in-transit', 'delivered', 'cancelled') NOT NULL DEFAULT 'placed',
+  subtotal DECIMAL(10, 2) NOT NULL,
+  shipping DECIMAL(10, 2) NOT NULL,
+  taxes DECIMAL(10, 2) NOT NULL,
+  total DECIMAL(10, 2) NOT NULL,
+  payment_method VARCHAR(40),
+  delivery_notes VARCHAR(500),
+  address_snapshot JSON,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+  INDEX idx_orders_user_created (user_id, created_at)
+);
+
+CREATE TABLE IF NOT EXISTS order_items (
+  id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  order_id BIGINT UNSIGNED NOT NULL,
+  product_id VARCHAR(20) NOT NULL,
+  product_name VARCHAR(255) NOT NULL,
+  quantity INT UNSIGNED NOT NULL,
+  unit_price DECIMAL(10, 2) NOT NULL,
+  line_total DECIMAL(10, 2) NOT NULL,
+  sale_type ENUM('fixed', 'variable') NOT NULL DEFAULT 'fixed',
+  unit VARCHAR(50) DEFAULT 'items',
+  unit_weight INT,
+  image VARCHAR(500),
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (order_id) REFERENCES orders(id) ON DELETE CASCADE,
+  FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE RESTRICT,
+  INDEX idx_order_items_order_id (order_id)
+);
+

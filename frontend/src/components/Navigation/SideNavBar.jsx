@@ -20,10 +20,10 @@ export default function SideNavBar({ isOpen }) {
           <span className="material-symbols-outlined text-xl group-hover:translate-x-1 transition-transform">payments</span>
           <span className="font-medium text-sm">Payment Info</span>
         </button>
-        <button className="w-full appearance-none bg-transparent border-0 text-left flex items-center gap-3 px-4 py-3 text-neutral-500 hover:bg-neutral-900 hover:text-white transition-all rounded-lg group" type="button">
+        <Link to="/orders" className="w-full appearance-none bg-transparent border-0 text-left flex items-center gap-3 px-4 py-3 text-neutral-500 hover:bg-neutral-900 hover:text-white transition-all rounded-lg group no-underline">
           <span className="material-symbols-outlined text-xl group-hover:translate-x-1 transition-transform">receipt_long</span>
           <span className="font-medium text-sm">Order History</span>
-        </button>
+        </Link>
       </nav>
     </aside>
   );

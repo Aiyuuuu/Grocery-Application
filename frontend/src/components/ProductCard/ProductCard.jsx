@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
-import { updateCartItem } from '../../store/CartPage/cartSlice';
+import { addToCartAsync } from '../../store/CartPage/cartSlice';
 import { selectCartQuantityById } from '../../store/selectors';
 import {
   convertEditValueForUnitChange,
@@ -30,7 +30,7 @@ export default function ProductCard({
 
   const setQuantity = (newValOrFunc) => {
     const value = typeof newValOrFunc === 'function' ? newValOrFunc(quantity) : newValOrFunc;
-    dispatch(updateCartItem({ id: product.id, quantity: value }));
+    dispatch(addToCartAsync({ id: product.id, quantity: value }));
   };
 
   const [isEditing, setIsEditing] = useState(false);

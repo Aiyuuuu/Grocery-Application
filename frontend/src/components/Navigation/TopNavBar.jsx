@@ -1,8 +1,8 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { clearSearchQuery, setSearchQuery } from '../../store/HomePage/productsSlice';
-import { selectCartCount, selectSearchQuery } from '../../store/selectors';
+import { logout } from '../../store/AuthPage/authSlice';
+import { selectCartCount } from '../../store/selectors';
 import { getSearchValidationError, normalizeSearchQuery } from '../../utils/search';
 
 export default function TopNavBar({ onToggleSidebar }) {
@@ -10,23 +10,21 @@ export default function TopNavBar({ onToggleSidebar }) {
   const navigate = useNavigate();
   const location = useLocation();
   const cartCount = useSelector(selectCartCount);
-  const searchInput = useSelector(selectSearchQuery);
+  const [searchInput, setSearchInput] = useState('');
   const [searchError, setSearchError] = useState('');
+  const [isSearchDirty, setIsSearchDirty] = useState(false);
 
-  useEffect(() => {
-    if (!location.pathname.startsWith('/search')) {
-      dispatch(clearSearchQuery());
-      return;
-    }
-
-    const queryFromUrl = new URLSearchParams(location.search).get('q') || '';
-    const normalizedQuery = normalizeSearchQuery(queryFromUrl);
-    dispatch(setSearchQuery(normalizedQuery));
-  }, [location.pathname, location.search, dispatch]);
+  const isSearchRoute = location.pathname.startsWith('/search');
+  const queryFromUrl = new URLSearchParams(location.search).get('q') || '';
+  const normalizedQueryFromUrl = normalizeSearchQuery(queryFromUrl);
+  const effectiveSearchInput = isSearchRoute
+    ? (isSearchDirty ? searchInput : normalizedQueryFromUrl)
+    : searchInput;
 
   const handleSearchChange = (event) => {
     const nextValue = event.target.value;
-    dispatch(setSearchQuery(nextValue));
+    setIsSearchDirty(true);
+    setSearchInput(nextValue);
 
     if (searchError) {
       setSearchError(getSearchValidationError(nextValue));
@@ -35,29 +33,36 @@ export default function TopNavBar({ onToggleSidebar }) {
 
   const handleSearchSubmit = (event) => {
     event.preventDefault();
-    const validationError = getSearchValidationError(searchInput);
+    const validationError = getSearchValidationError(effectiveSearchInput);
 
     if (validationError) {
       setSearchError(validationError);
       return;
     }
 
-    const normalizedQuery = normalizeSearchQuery(searchInput);
-    dispatch(setSearchQuery(normalizedQuery));
+    const normalizedQuery = normalizeSearchQuery(effectiveSearchInput);
+    setIsSearchDirty(false);
+    setSearchInput(normalizedQuery);
     setSearchError('');
     navigate(`/search?q=${encodeURIComponent(normalizedQuery)}`);
   };
 
   const handleClearSearch = () => {
+    setIsSearchDirty(false);
     setSearchError('');
-    dispatch(clearSearchQuery());
+    setSearchInput('');
 
-    if (location.pathname.startsWith('/search')) {
+    if (isSearchRoute) {
       navigate('/search');
     }
   };
 
   const visibleSearchError = searchError;
+
+  const handleLogout = () => {
+    dispatch(logout());
+    navigate('/', { replace: true });
+  };
 
   return (
     <nav className="fixed top-0 w-full z-50 bg-neutral-950/60 backdrop-blur-xl flex justify-between items-center px-4 md:px-8 py-4 shadow-[0_24_48px_rgba(0,0,0,0.5)]">
@@ -82,12 +87,12 @@ export default function TopNavBar({ onToggleSidebar }) {
             className={`bg-surface-container-highest border-none rounded-full px-6 py-2 pr-16 w-80 text-sm focus:ring-1 text-on-surface placeholder:text-neutral-500 ${visibleSearchError ? 'focus:ring-red-400/70 ring-1 ring-red-400/60' : 'focus:ring-primary/50'}`}
             placeholder="Search curated collection..."
             type="text"
-            value={searchInput}
+            value={effectiveSearchInput}
             onChange={handleSearchChange}
             aria-label="Search products"
             aria-invalid={Boolean(visibleSearchError)}
           />
-          {searchInput && (
+          {effectiveSearchInput && (
             <button
               type="button"
               className="absolute right-9 top-1.5 text-neutral-500 hover:text-on-surface transition-colors"
@@ -119,8 +124,14 @@ export default function TopNavBar({ onToggleSidebar }) {
               </span>
             )}
           </Link>
-          <button className="hover:text-primary transition-colors">
-            <span className="material-symbols-outlined">account_circle</span>
+          <button
+            onClick={handleLogout}
+            className="hover:text-primary transition-colors flex items-center gap-1"
+            type="button"
+            aria-label="Logout"
+          >
+            <span className="material-symbols-outlined">logout</span>
+            <span className="hidden sm:inline text-xs font-semibold">Logout</span>
           </button>
         </div>
       </div>

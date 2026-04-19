@@ -1,13 +1,30 @@
-import { useRef, useState } from 'react';
-import { useSelector } from 'react-redux';
-import { selectRecommendedProducts } from '../../store/selectors';
+import { useRef, useState, useEffect } from 'react';
+import { productsService } from '../../api/services';
 import ProductCard from '../ProductCard/ProductCard';
 import styles from './HomeSections.module.css';
 
 export default function RecommendedSection() {
-  const recommendedProducts = useSelector(selectRecommendedProducts);
+  const [recommendedProducts, setRecommendedProducts] = useState([]);
+  const [loading, setLoading] = useState(true);
   const scrollRef = useRef(null);
   const [hoverSide, setHoverSide] = useState(null);
+
+  useEffect(() => {
+    const fetchProducts = async () => {
+      try {
+        setLoading(true);
+        const productsData = await productsService.getProducts();
+        const recommended = productsData.filter((product) => product.recommended === true);
+        setRecommendedProducts(recommended);
+      } catch (error) {
+        console.error('Failed to fetch recommended products:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchProducts();
+  }, []);
 
   const handleMouseMove = (e) => {
     const { left, width } = e.currentTarget.getBoundingClientRect();
@@ -37,6 +54,8 @@ export default function RecommendedSection() {
     }
   };
 
+  if (loading) return <div className="text-center py-8">Loading recommended products...</div>;
+
   return (
     <section className="mb-16 relative">
       <div className="flex justify-between items-end mb-6">
@@ -46,7 +65,7 @@ export default function RecommendedSection() {
         </div>
         <button className="text-primary text-sm font-semibold hover:underline">Explore all picks</button>
       </div>
-      
+
       <div 
         className="relative"
         onMouseMove={handleMouseMove}
@@ -76,14 +95,15 @@ export default function RecommendedSection() {
           ref={scrollRef}
           className={`flex gap-4 overflow-x-auto pb-6 -mx-4 px-4 ${styles.noScrollbar} scroll-smooth`}
         >
-          {/* Dynamic Cards from Redux Store */}
           {recommendedProducts.slice(0, 20).map((product) => (
-          <ProductCard 
-            key={product.id || product.name} 
-            className="w-[11.25rem] min-w-[11.25rem] flex-shrink-0" 
-            product={product} 
-          />
-        ))}
-      </div>      </div>    </section>
+            <ProductCard 
+              key={product.id || product.name} 
+              className="w-[11.25rem] min-w-[11.25rem] flex-shrink-0" 
+              product={product} 
+            />
+          ))}
+        </div>
+      </div>
+    </section>
   );
 }

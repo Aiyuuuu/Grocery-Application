@@ -1,8 +1,9 @@
 import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useSelector, useDispatch } from 'react-redux';
-import { updateCartItem } from '../../store/CartPage/cartSlice';
-import { selectCartQuantityById, selectProductById } from '../../store/selectors';
+import { addToCartAsync } from '../../store/CartPage/cartSlice';
+import { selectCartQuantityById } from '../../store/selectors';
+import { productsService } from '../../api/services';
 import {
   convertEditValueForUnitChange,
   formatFixedTotalWeight,
@@ -20,7 +21,8 @@ export default function ProductDetailsPage() {
   const navigate = useNavigate();
   const dispatch = useDispatch();
 
-  const product = useSelector((state) => selectProductById(state, id));
+  const [product, setProduct] = useState(null);
+  const [loading, setLoading] = useState(true);
   const quantity = useSelector((state) => selectCartQuantityById(state, id));
 
   const isVariable = product?.saleType === 'variable';
@@ -29,7 +31,7 @@ export default function ProductDetailsPage() {
 
   const setQuantity = (newValOrFunc) => {
     const value = typeof newValOrFunc === 'function' ? newValOrFunc(quantity) : newValOrFunc;
-    dispatch(updateCartItem({ id: product.id, quantity: value }));
+    dispatch(addToCartAsync({ id: product.id, quantity: value }));
   };
 
   const [isEditing, setIsEditing] = useState(false);
@@ -37,8 +39,28 @@ export default function ProductDetailsPage() {
   const [editUnit, setEditUnit] = useState(getBaseUnit(unit));
 
   useEffect(() => {
+    const fetchProduct = async () => {
+      try {
+        setLoading(true);
+        const productData = await productsService.getProductById(id);
+        setProduct(productData);
+      } catch (error) {
+        console.error('Failed to fetch product:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchProduct();
+  }, [id]);
+
+  useEffect(() => {
     window.scrollTo(0, 0);
   }, [id]);
+
+  if (loading) {
+    return <div className="text-center py-8">Loading product...</div>;
+  }
 
   if (!product) {
     return <NotFoundPage />;

@@ -1,9 +1,10 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import { Link, useNavigate } from 'react-router-dom';
-import { updateCartItem } from '../../store/CartPage/cartSlice';
-import { selectCartDetails, selectCartTotals } from '../../store/selectors';
-import { UNIT_SCALE } from '../../constants/cart';
+import { addToCartAsync } from '../../store/CartPage/cartSlice';
+import { productsService } from '../../api/services';
+import { selectCartItems } from '../../store/selectors';
+import { UNIT_SCALE, FREE_SHIPPING_THRESHOLD, STANDARD_SHIPPING, TAX_RATE } from '../../constants/cart';
 import {
   convertEditValueForUnitChange,
   formatQuantity,
@@ -24,7 +25,7 @@ function CartItemLine({ item, product }) {
   const quantity = item.quantity;
   const setQuantity = (newValOrFunc) => {
     const value = typeof newValOrFunc === 'function' ? newValOrFunc(quantity) : newValOrFunc;
-    dispatch(updateCartItem({ id: product.id, quantity: value }));
+    dispatch(addToCartAsync({ id: product.id, quantity: value }));
   };
 
   const [isEditing, setIsEditing] = useState(false);
@@ -82,7 +83,7 @@ function CartItemLine({ item, product }) {
 
   const handleRemove = (e) => {
     e.stopPropagation();
-    dispatch(updateCartItem({ id: product.id, quantity: 0 }));
+    dispatch(addToCartAsync({ id: product.id, quantity: 0 }));
   };
 
   const itemTotal = isVariable ? (quantity / UNIT_SCALE) * product.price : quantity * product.price;
@@ -182,8 +183,50 @@ function CartItemLine({ item, product }) {
 }
 
 export default function CartPage() {
-  const cartDetails = useSelector(selectCartDetails);
-  const { subtotal, shipping, taxes, total } = useSelector(selectCartTotals);
+  const cartItems = useSelector(selectCartItems);
+  const [products, setProducts] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchProducts = async () => {
+      try {
+        setLoading(true);
+        const productsData = await productsService.getProducts();
+        setProducts(productsData);
+      } catch (error) {
+        console.error('Failed to fetch products:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchProducts();
+  }, []);
+
+  // Create a map of products by ID
+  const productsById = {};
+  products.forEach((product) => {
+    productsById[product.id] = product;
+  });
+
+  // Create cart details with product information
+  const cartDetails = cartItems
+    .map((item) => ({ item, product: productsById[item.id] }))
+    .filter((entry) => entry.product);
+
+  // Calculate totals
+  const subtotal = cartDetails.reduce((sum, { item, product }) => {
+    const multiplier = product.saleType === 'variable' ? item.quantity / UNIT_SCALE : item.quantity;
+    return sum + multiplier * product.price;
+  }, 0);
+
+  const shipping = subtotal > FREE_SHIPPING_THRESHOLD || subtotal === 0 ? 0 : STANDARD_SHIPPING;
+  const taxes = subtotal * TAX_RATE;
+  const total = subtotal + shipping + taxes;
+
+  if (loading) {
+    return <div className="text-center py-8">Loading cart...</div>;
+  }
 
   if (cartDetails.length === 0) {
     return (

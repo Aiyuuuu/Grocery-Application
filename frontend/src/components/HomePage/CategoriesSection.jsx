@@ -1,9 +1,49 @@
-import { useSelector } from 'react-redux';
-import { selectCategoriesWithProducts } from '../../store/selectors';
+import { useEffect, useState } from 'react';
+import { categoriesService, productsService } from '../../api/services';
 import ProductCard from '../ProductCard/ProductCard';
 
 export default function CategoriesSection() {
-  const categories = useSelector(selectCategoriesWithProducts);
+  const [categories, setCategories] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        setLoading(true);
+        const [categoriesData, productsData] = await Promise.all([
+          categoriesService.getCategories(),
+          productsService.getProducts(),
+        ]);
+
+        // Create a map of products by ID
+        const productsById = {};
+        productsData.forEach((product) => {
+          productsById[product.id] = product;
+        });
+
+        // Enrich categories with products
+        const enrichedCategories = categoriesData.map((category) => ({
+          ...category,
+          products: category.productIds
+            .map((id) => productsById[id])
+            .filter(Boolean),
+        }));
+
+        setCategories(enrichedCategories);
+      } catch (err) {
+        setError(err.message);
+        console.error('Failed to fetch categories:', err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchData();
+  }, []);
+
+  if (loading) return <div className="text-center py-8">Loading categories...</div>;
+  if (error) return <div className="text-center py-8 text-red-500">Error: {error}</div>;
 
   return (
     <div className="space-y-12 pb-12">

@@ -2,8 +2,15 @@ import { useState, useEffect } from 'react';
 import AddressCard from '../../components/Addresses/AddressCard/AddressCard';
 import AddressForm from '../../components/Addresses/AddressForm/AddressForm';
 import MapComponent from '../../components/Addresses/MapComponent/MapComponent';
-import { getDefaultAddress, loadAddresses, saveAddresses } from '../../utils/addresses';
+import { addressesService } from '../../api/services';
 import styles from './AddressesPage.module.css';
+
+function getDefaultAddress(addresses) {
+  if (!Array.isArray(addresses) || addresses.length === 0) {
+    return null;
+  }
+  return addresses.find((address) => address.isDefault) || addresses[0];
+}
 
 export default function AddressesPage() {
   const [addresses, setAddresses] = useState([]);
@@ -12,16 +19,19 @@ export default function AddressesPage() {
   const [selectedAddress, setSelectedAddress] = useState(null);
   const [loading, setLoading] = useState(true);
   const [deleteConfirm, setDeleteConfirm] = useState(null);
+  const [error, setError] = useState(null);
 
   useEffect(() => {
     const initializeAddresses = async () => {
       try {
         setLoading(true);
-        const loadedAddresses = await loadAddresses();
+        setError(null);
+        const loadedAddresses = await addressesService.list();
         setAddresses(loadedAddresses);
         setSelectedAddress(getDefaultAddress(loadedAddresses));
-      } catch (error) {
-        console.error('Error loading addresses:', error);
+      } catch (err) {
+        console.error('Error loading addresses:', err);
+        setError('Failed to load addresses');
         setAddresses([]);
         setSelectedAddress(null);
       } finally {
@@ -42,39 +52,52 @@ export default function AddressesPage() {
     setShowForm(true);
   };
 
-  const handleSaveAddress = (addressData) => {
-    const nextAddresses = editingAddress
-      ? addresses.map((addr) => (addr.id === addressData.id ? addressData : addr))
-      : [...addresses, addressData];
-
-    setAddresses(nextAddresses);
-    saveAddresses(nextAddresses);
-
-    if (editingAddress) {
-      if (selectedAddress?.id === addressData.id) {
-        setSelectedAddress(addressData);
+  const handleSaveAddress = async (addressData) => {
+    try {
+      setError(null);
+      let savedAddress;
+      
+      if (editingAddress) {
+        // Update existing address
+        savedAddress = await addressesService.update(addressData.id, addressData);
+        setAddresses(addresses.map((addr) => (addr.id === savedAddress.id ? savedAddress : addr)));
+        if (selectedAddress?.id === savedAddress.id) {
+          setSelectedAddress(savedAddress);
+        }
+      } else {
+        // Create new address
+        savedAddress = await addressesService.create(addressData);
+        setAddresses([...addresses, savedAddress]);
+        setSelectedAddress((prev) => prev || savedAddress);
       }
-    } else {
-      setSelectedAddress((prev) => prev || getDefaultAddress(nextAddresses));
-    }
 
-    setShowForm(false);
-    setEditingAddress(null);
+      setShowForm(false);
+      setEditingAddress(null);
+    } catch (err) {
+      console.error('Error saving address:', err);
+      setError('Failed to save address');
+    }
   };
 
   const handleDeleteConfirm = (addressId) => {
     setDeleteConfirm(addressId);
   };
 
-  const handleDelete = (addressId) => {
-    const newAddresses = addresses.filter((addr) => addr.id !== addressId);
-    setAddresses(newAddresses);
-    saveAddresses(newAddresses);
+  const handleDelete = async (addressId) => {
+    try {
+      setError(null);
+      await addressesService.remove(addressId);
+      const newAddresses = addresses.filter((addr) => addr.id !== addressId);
+      setAddresses(newAddresses);
 
-    if (selectedAddress?.id === addressId) {
-      setSelectedAddress(getDefaultAddress(newAddresses));
+      if (selectedAddress?.id === addressId) {
+        setSelectedAddress(getDefaultAddress(newAddresses));
+      }
+      setDeleteConfirm(null);
+    } catch (err) {
+      console.error('Error deleting address:', err);
+      setError('Failed to delete address');
     }
-    setDeleteConfirm(null);
   };
 
   const handleSelectAddress = (address) => {
@@ -142,6 +165,11 @@ export default function AddressesPage() {
           <p className={styles.subtitle}>
             Manage your delivery locations for a seamless experience.
           </p>
+          {error && (
+            <p className={styles.subtitle} role="alert" style={{ color: '#ffb4ab', marginTop: '0.5rem' }}>
+              {error}
+            </p>
+          )}
         </div>
       </header>
 

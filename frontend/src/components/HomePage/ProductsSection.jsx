@@ -1,14 +1,53 @@
-import { useSelector } from 'react-redux';
-import { selectCategoriesWithProducts, selectRecommendedProducts } from '../../store/selectors';
+import { useEffect, useState } from 'react';
+import { categoriesService, productsService } from '../../api/services';
 import ProductCard from '../ProductCard/ProductCard';
 import styles from './HomeSections.module.css';
 
 export default function ProductsSection() {
-  const categories = useSelector(selectCategoriesWithProducts);
-  const recommendedProducts = useSelector(selectRecommendedProducts);
+  const [categories, setCategories] = useState([]);
+  const [products, setProducts] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        setLoading(true);
+        const [categoriesData, productsData] = await Promise.all([
+          categoriesService.getCategories(),
+          productsService.getProducts(),
+        ]);
+
+        // Create a map of products by ID
+        const productsById = {};
+        productsData.forEach((product) => {
+          productsById[product.id] = product;
+        });
+
+        // Enrich categories with products
+        const enrichedCategories = categoriesData.map((category) => ({
+          ...category,
+          products: category.productIds
+            .map((id) => productsById[id])
+            .filter(Boolean),
+        }));
+
+        setCategories(enrichedCategories);
+        setProducts(productsData);
+      } catch (error) {
+        console.error('Failed to fetch products:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchData();
+  }, []);
 
   const sugarFreeProducts = categories.find((category) => category.name === 'Sugar Free')?.products || [];
   const proteinRichProducts = categories.find((category) => category.name === 'Protein Rich')?.products || [];
+  const recommendedProducts = products.filter((product) => product.recommended === true);
+
+  if (loading) return <div className="text-center py-8">Loading products...</div>;
 
   return (
     <div className="space-y-12 pb-12">
@@ -44,7 +83,6 @@ export default function ProductsSection() {
               product={product}
             />
           ))}
-
         </div>
       </section>
 

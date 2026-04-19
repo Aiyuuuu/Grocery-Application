@@ -3,7 +3,6 @@ import { Outlet } from 'react-router-dom';
 import TopNavBar from '../Navigation/TopNavBar';
 import SideNavBar from '../Navigation/SideNavBar';
 import Footer from '../Navigation/Footer';
-import FabAI from '../Navigation/FabAI';
 
 export default function AppLayout() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
@@ -18,7 +17,6 @@ export default function AppLayout() {
         <Outlet />
       </main>
 
-      <FabAI />
       <Footer />
     </div>
   );

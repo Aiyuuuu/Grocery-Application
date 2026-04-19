@@ -1,24 +1,43 @@
-import { useEffect } from 'react';
-import { useDispatch, useSelector } from 'react-redux';
+import { useEffect, useMemo, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
+import { productsService } from '../../api/services';
 import ProductCard from '../../components/ProductCard/ProductCard';
-import { setSearchQuery } from '../../store/HomePage/productsSlice';
-import { selectSearchQuery, selectSearchResults } from '../../store/selectors';
 import { getSearchValidationError, normalizeSearchQuery } from '../../utils/search';
 
 export default function SearchResultsPage() {
-  const dispatch = useDispatch();
   const navigate = useNavigate();
   const location = useLocation();
-
-  const searchQuery = useSelector(selectSearchQuery);
-  const products = useSelector(selectSearchResults);
+  const [allProducts, setAllProducts] = useState([]);
+  const searchQuery = useMemo(() => {
+    const queryFromUrl = new URLSearchParams(location.search).get('q') || '';
+    return normalizeSearchQuery(queryFromUrl);
+  }, [location.search]);
 
   useEffect(() => {
-    const queryFromUrl = new URLSearchParams(location.search).get('q') || '';
-    dispatch(setSearchQuery(normalizeSearchQuery(queryFromUrl)));
-  }, [location.search, dispatch]);
+    const fetchProducts = async () => {
+      try {
+        const productsData = await productsService.getProducts();
+        setAllProducts(productsData);
+      } catch (error) {
+        console.error('Failed to fetch products:', error);
+      }
+    };
 
+    fetchProducts();
+  }, []);
+
+  const searchResults = () => {
+    const needle = searchQuery.trim().toLowerCase();
+    if (!needle) return [];
+
+    return allProducts.filter((product) => {
+      const tags = Array.isArray(product.tags) ? product.tags.join(' ') : '';
+      const haystack = `${product.name || ''} ${product.description || ''} ${tags}`.toLowerCase();
+      return haystack.includes(needle);
+    });
+  };
+
+  const products = searchResults();
   const validationError = getSearchValidationError(searchQuery);
   const hasValidQuery = !validationError;
   const hasProducts = products.length > 0;

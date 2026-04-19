@@ -1,18 +1,55 @@
+import { useState } from 'react';
+import { useDispatch, useSelector } from 'react-redux';
+import { loginUser, clearAuthError } from '../../../store/AuthPage/authSlice';
+import { selectAuthError, selectAuthStatus } from '../../../store/selectors';
 import styles from './AuthForms.module.css';
 
 export default function SignInForm({ onSwitchView }) {
+  const dispatch = useDispatch();
+  const authStatus = useSelector(selectAuthStatus);
+  const authError = useSelector(selectAuthError);
+  const isSubmitting = authStatus === 'loading';
+  const [formValues, setFormValues] = useState({ email: '', password: '' });
+
+  const handleChange = (event) => {
+    const { name, value } = event.target;
+    setFormValues((currentValues) => ({
+      ...currentValues,
+      [name]: value,
+    }));
+
+    if (authError) {
+      dispatch(clearAuthError());
+    }
+  };
+
+  const handleSubmit = async (event) => {
+    event.preventDefault();
+    dispatch(clearAuthError());
+    await dispatch(loginUser(formValues));
+  };
+
   return (
     <div className="flex-col gap-8 flex form-visible">
       <div className="flex flex-col gap-2">
         <h3 className="text-2xl font-headline font-bold text-on-surface">Welcome Back</h3>
         <p className="text-on-surface-variant text-sm">Please enter your details to access your kitchen.</p>
       </div>
-      <form className="flex flex-col gap-5" onSubmit={(e) => e.preventDefault()}>
+      <form className="flex flex-col gap-5" onSubmit={handleSubmit}>
         <div className="flex flex-col gap-2">
           <label className="text-xs font-bold uppercase tracking-wider text-on-surface-variant">Email Address</label>
           <div className="relative group">
             <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-on-surface-variant group-focus-within:text-primary transition-colors">mail</span>
-            <input className="w-full bg-surface-container-highest border-none rounded-lg h-14 pl-12 pr-4 text-on-surface placeholder:text-outline focus:ring-1 focus:ring-primary/40 transition-all" placeholder="alex@example.com" type="email" />
+            <input
+              className="w-full bg-surface-container-highest border-none rounded-lg h-14 pl-12 pr-4 text-on-surface placeholder:text-outline focus:ring-1 focus:ring-primary/40 transition-all"
+              placeholder="alex@example.com"
+              type="email"
+              name="email"
+              value={formValues.email}
+              onChange={handleChange}
+              autoComplete="email"
+              required
+            />
           </div>
         </div>
         <div className="flex flex-col gap-2">
@@ -22,14 +59,24 @@ export default function SignInForm({ onSwitchView }) {
           </div>
           <div className="relative group">
             <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-on-surface-variant group-focus-within:text-primary transition-colors">lock</span>
-            <input className="w-full bg-surface-container-highest border-none rounded-lg h-14 pl-12 pr-12 text-on-surface placeholder:text-outline focus:ring-1 focus:ring-primary/40 transition-all" placeholder="••••••••" type="password" />
+            <input
+              className="w-full bg-surface-container-highest border-none rounded-lg h-14 pl-12 pr-12 text-on-surface placeholder:text-outline focus:ring-1 focus:ring-primary/40 transition-all"
+              placeholder="••••••••"
+              type="password"
+              name="password"
+              value={formValues.password}
+              onChange={handleChange}
+              autoComplete="current-password"
+              required
+            />
             <button className="absolute right-4 top-1/2 -translate-y-1/2 text-on-surface-variant hover:text-on-surface" type="button">
               <span className="material-symbols-outlined" data-icon="eye">visibility</span>
             </button>
           </div>
         </div>
-        <button className={`${styles.btnGradient} h-14 rounded-lg text-on-primary-container font-bold text-base shadow-lg shadow-primary/10 hover:brightness-110 active:scale-[0.98] transition-all`} type="submit">
-          Sign In to CartZen
+        {authError && <p className="text-sm text-red-400">{authError}</p>}
+        <button className={`${styles.btnGradient} h-14 rounded-lg text-on-primary-container font-bold text-base shadow-lg shadow-primary/10 hover:brightness-110 active:scale-[0.98] transition-all disabled:opacity-60 disabled:cursor-not-allowed`} type="submit" disabled={isSubmitting}>
+          {isSubmitting ? 'Signing In...' : 'Sign In to CartZen'}
         </button>
       </form>
       <div className="relative flex items-center gap-4 py-2">
