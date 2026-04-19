@@ -6,5 +6,5 @@
   scrollbar-width: none; /* Firefox */
 }
 .ctaGradient {
-  background: linear-gradient(135deg, #69f6b8 0%, #06b77f 100%);
+  background: var(--brand-gradient);
 }

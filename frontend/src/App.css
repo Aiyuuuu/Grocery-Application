@@ -1,4 +1,8 @@
 /* Global Application Styles */
+:root {
+  --brand-gradient: linear-gradient(135deg, #69f6b8 0%, #06b77f 100%);
+}
+
 html {
   font-size: 16px;
 }

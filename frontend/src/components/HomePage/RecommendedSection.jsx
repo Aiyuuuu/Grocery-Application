@@ -1,11 +1,11 @@
-import React, { useRef, useState } from 'react';
+import { useRef, useState } from 'react';
 import { useSelector } from 'react-redux';
+import { selectRecommendedProducts } from '../../store/selectors';
 import ProductCard from '../ProductCard/ProductCard';
 import styles from './HomeSections.module.css';
 
 export default function RecommendedSection() {
-  const allProducts = useSelector((state) => state.products?.items || []);
-  const recommendedProducts = allProducts.filter(p => p.recommended === true);
+  const recommendedProducts = useSelector(selectRecommendedProducts);
   const scrollRef = useRef(null);
   const [hoverSide, setHoverSide] = useState(null);
 

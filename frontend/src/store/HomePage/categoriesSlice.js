@@ -8,7 +8,7 @@ const initialState = {
     },
     {
       name: "The Pantry",
-      productIds: ["prod-1", "prod-2", "prod-4", "prod-5", "prod-rtk-0", "prod-rtk-01", "prod-rtk-1", "prod-rtk-2", "prod-rtk-3", "prod-rtk-4", "prod-rtk-5", "prod-rtk-6", "prod-rtk-7", "prod-rtk-8"]
+      productIds: ["prod-1", "prod-2", "prod-4", "prod-5"]
     },
     {
       name: "Dairy & Eggs",
@@ -20,15 +20,15 @@ const initialState = {
     },
     {
       name: "Sugar Free",
-      productIds: ["prod-1", "prod-5", "prod-rtk-2", "prod-rtk-6"]
+      productIds: ["prod-1", "prod-4", "prod-5"]
     },
     {
       name: "Protein Rich",
-      productIds: ["prod-2", "prod-3", "prod-7", "prod-rtk-4", "prod-rtk-8"]
+      productIds: ["prod-2", "prod-3", "prod-7"]
     },
     {
       name: "Fruits & Veggies",
-      productIds: ["prod-8", "prod-rtk-02"]
+      productIds: ["prod-8", "prod-9"]
     }
   ]
 };

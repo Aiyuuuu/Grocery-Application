@@ -1,7 +1,18 @@
-import React, { useState, useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useSelector, useDispatch } from 'react-redux';
 import { updateCartItem } from '../../store/CartPage/cartSlice';
+import { selectCartQuantityById, selectProductById } from '../../store/selectors';
+import {
+  convertEditValueForUnitChange,
+  formatFixedTotalWeight,
+  formatQuantity,
+  getBaseUnit,
+  getInitialEditState,
+  getStepAndMax,
+  parseEditedQuantity,
+} from '../../utils/quantity';
+import { UNIT_SCALE } from '../../constants/cart';
 import NotFoundPage from '../404Page/NotFoundPage';
 
 export default function ProductDetailsPage() {
@@ -9,34 +20,21 @@ export default function ProductDetailsPage() {
   const navigate = useNavigate();
   const dispatch = useDispatch();
 
-  const products = useSelector(state => state.products.items);
-  const product = products.find(p => p.id === id);
-
-  const cartItems = useSelector(state => state.cart.items);
-  const cartItem = cartItems.find(item => item.id === id);
-  const cartItemQuantity = cartItem ? cartItem.quantity : 0;
+  const product = useSelector((state) => selectProductById(state, id));
+  const quantity = useSelector((state) => selectCartQuantityById(state, id));
 
   const isVariable = product?.saleType === 'variable';
   const unit = product?.unit || 'items';
-  const step = isVariable ? 100 : 1;
-  const maxQuantity = isVariable ? 50000 : 20;
+  const { step, maxQuantity } = getStepAndMax(isVariable);
 
-  const quantity = cartItemQuantity;
   const setQuantity = (newValOrFunc) => {
     const value = typeof newValOrFunc === 'function' ? newValOrFunc(quantity) : newValOrFunc;
     dispatch(updateCartItem({ id: product.id, quantity: value }));
   };
 
   const [isEditing, setIsEditing] = useState(false);
-  const [editValue, setEditValue] = useState("");
-  const [editUnit, setEditUnit] = useState(unit === 'kg' ? 'g' : unit === 'L' ? 'ml' : unit);
-
-  const [prevId, setPrevId] = useState(id);
-  if (id !== prevId) {
-    setPrevId(id);
-    setIsEditing(false);
-    setEditUnit(unit === 'kg' ? 'g' : unit === 'L' ? 'ml' : unit);
-  }
+  const [editValue, setEditValue] = useState('');
+  const [editUnit, setEditUnit] = useState(getBaseUnit(unit));
 
   useEffect(() => {
     window.scrollTo(0, 0);
@@ -47,68 +45,47 @@ export default function ProductDetailsPage() {
   }
 
   const handleMinus = () => {
-    if (isEditing) return;
-    if (quantity === 0) return;
-    setQuantity(q => Math.max(0, q - step));
+    if (isEditing || quantity === 0) return;
+    setQuantity((q) => Math.max(0, q - step));
   };
 
   const handlePlus = () => {
     if (isEditing || quantity >= maxQuantity) return;
-    // If quantity is 0, initialize to default step for first add
     if (quantity === 0) {
-      setQuantity(isVariable ? 100 : 1);
-    } else {
-      setQuantity(q => Math.min(maxQuantity, q + step));
+      setQuantity(step);
+      return;
     }
+    setQuantity((q) => Math.min(maxQuantity, q + step));
   };
 
   const handleQuantityClick = () => {
     if (isEditing) return;
     setIsEditing(true);
 
-    if (isVariable) {
-      const baseUnit = unit === 'kg' ? 'g' : unit === 'L' ? 'ml' : unit;
-      if (quantity < 1000) {
-        setEditUnit(baseUnit);
-        setEditValue(quantity.toString());
-      } else {
-        setEditUnit(unit);
-        setEditValue((quantity / 1000).toString());
-      }
-    } else {
-      setEditValue(quantity.toString());
-    }
+    const nextEdit = getInitialEditState({ quantity, isVariable, unit });
+    setEditUnit(nextEdit.editUnit);
+    setEditValue(nextEdit.editValue);
   };
 
   const handleUnitChange = (e) => {
     const newUnit = e.target.value;
     if (newUnit === editUnit) return;
-    
-    
-    let currentVal = parseFloat(editValue) || 0;
-    if (newUnit === 'kg' || newUnit === 'L') {
-      currentVal = currentVal / 1000;
-    } else {
-      currentVal = currentVal * 1000;
-    }
-    
+
     setEditUnit(newUnit);
-    setEditValue(currentVal.toString());
+    setEditValue(convertEditValueForUnitChange(editValue, newUnit));
   };
 
   const commitEdit = () => {
     if (!isEditing) return;
-    let parsed = parseFloat(editValue);
-    if (isNaN(parsed) || parsed < 0) parsed = 0;
-    
-    let baseValue = parsed;
-    if (isVariable && (editUnit === 'kg' || editUnit === 'L')) {
-      baseValue = parsed * 1000;
-    }
-    
-    let finalQuantity = isVariable ? Math.round(baseValue / step) * step : Math.round(baseValue);
-    if (finalQuantity > maxQuantity) finalQuantity = maxQuantity;
-    
+
+    const finalQuantity = parseEditedQuantity({
+      editValue,
+      editUnit,
+      isVariable,
+      step,
+      maxQuantity,
+    });
+
     setQuantity(finalQuantity);
     setIsEditing(false);
   };
@@ -119,19 +96,9 @@ export default function ProductDetailsPage() {
     }
   };
 
-  const formatQuantity = (q) => {
-    if (isVariable) {
-      if (q < 1000) {
-        return `${q} ${unit === 'kg' ? 'g' : unit === 'L' ? 'ml' : unit}`;
-      }
-      return `${q / 1000} ${unit}`;
-    }
-    return `${q}`;
-  };
-
   const calculateTotal = () => {
     if (typeof product.price === 'number') {
-      const multiplier = isVariable ? (quantity / 1000) : quantity;
+      const multiplier = isVariable ? quantity / UNIT_SCALE : quantity;
       return (product.price * multiplier).toFixed(2);
     }
     return '0.00';
@@ -208,13 +175,18 @@ export default function ProductDetailsPage() {
                 <div className="bg-surface-container-low px-4 py-3 rounded flex-1 border border-outline-variant/20 flex flex-col justify-center items-start">
                   <span className="block text-[10px] text-on-surface-variant mb-1 font-label uppercase tracking-wider">Quantity / Weight</span>
                   {isVariable ? (
-                    <span className="block text-xl font-bold text-on-surface mt-1">{formatQuantity(quantity)}</span>
+                    <span className="block text-xl font-bold text-on-surface mt-1">{formatQuantity(quantity, isVariable, unit)}</span>
                   ) : (
                     <div className="mt-1">
                       <span className="block text-base font-bold text-on-surface">Quantity: {quantity}</span>
                       <span className="block text-xs text-on-surface-variant font-medium mt-1">
-                        Total Weight: {(product.unit_weight * quantity)} {product.unit}
+                        Total Weight: {formatFixedTotalWeight({ unitWeight: product.unit_weight, quantity, unit: product.unit })}
                       </span>
+                      {product.unit_weight && (
+                        <span className="block text-[10px] text-on-surface-variant/70 font-medium mt-0.5">
+                          Per unit: {product.unit_weight} {product.unit}
+                        </span>
+                      )}
                     </div>
                   )}
                 </div>
@@ -261,7 +233,7 @@ export default function ProductDetailsPage() {
                               onChange={handleUnitChange}
                               className="appearance-none bg-none bg-surface-container-highest text-xs font-bold text-primary outline-none cursor-pointer py-1.5 pl-3 pr-7 rounded shadow-sm border border-outline-variant/20 hover:border-primary/50 transition-colors m-0"
                             >
-                              <option className="bg-surface-container text-on-surface" value={unit === 'kg' ? 'g' : unit === 'L' ? 'ml' : unit}>{unit === 'kg' ? 'g' : unit === 'L' ? 'ml' : unit}</option>
+                              <option className="bg-surface-container text-on-surface" value={getBaseUnit(unit)}>{getBaseUnit(unit)}</option>
                               {(unit === 'kg' || unit === 'L') && <option className="bg-surface-container text-on-surface" value={unit}>{unit}</option>}
                             </select>
                             <span className="material-symbols-outlined absolute right-1 mx-0.5 text-lg text-primary pointer-events-none">arrow_drop_down</span>
@@ -273,7 +245,7 @@ export default function ProductDetailsPage() {
                         onClick={handleQuantityClick}
                         className={`w-auto min-w-[5rem] text-center font-semibold text-on-surface ${isVariable ? 'cursor-text hover:text-primary transition-colors hover:scale-105' : ''}`}
                       >
-                        {formatQuantity(quantity)}
+                        {formatQuantity(quantity, isVariable, unit)}
                       </span>
                     )}
                   </div>

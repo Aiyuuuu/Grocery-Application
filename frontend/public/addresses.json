@@ -1,0 +1,49 @@
+{
+  "addresses": [
+    {
+      "id": 1,
+      "name": "Home",
+      "type": "home",
+      "fullAddress": "Block 2, Clifton\nKarachi, Sindh 75600",
+      "street": "Block 2, Clifton",
+      "city": "Karachi",
+      "state": "Sindh",
+      "zipCode": "75600",
+      "latitude": 24.7844,
+      "longitude": 67.0260,
+      "isDefault": true,
+      "phoneNumber": "+92 (300) 123-4567",
+      "instructions": "Ring the doorbell twice"
+    },
+    {
+      "id": 2,
+      "name": "Work",
+      "type": "work",
+      "fullAddress": "Business District, DHA Phase 5\nKarachi, Sindh 75500",
+      "street": "Business District, DHA Phase 5",
+      "city": "Karachi",
+      "state": "Sindh",
+      "zipCode": "75500",
+      "latitude": 24.8038,
+      "longitude": 67.0532,
+      "isDefault": false,
+      "phoneNumber": "+92 (300) 987-6543",
+      "instructions": "Ask for reception at main desk"
+    },
+    {
+      "id": 3,
+      "name": "Studio",
+      "type": "palette",
+      "fullAddress": "Tariq Road, Saddar\nKarachi, Sindh 74400",
+      "street": "Tariq Road, Saddar",
+      "city": "Karachi",
+      "state": "Sindh",
+      "zipCode": "74400",
+      "latitude": 24.8509,
+      "longitude": 67.0152,
+      "isDefault": false,
+      "phoneNumber": "+92 (300) 234-5678",
+      "instructions": "Leave at main entrance"
+    }
+  ]
+}

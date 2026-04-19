@@ -1,22 +1,14 @@
-import React from 'react';
 import { useSelector } from 'react-redux';
+import { selectCategoriesWithProducts } from '../../store/selectors';
 import ProductCard from '../ProductCard/ProductCard';
-import styles from './HomeSections.module.css';
 
 export default function CategoriesSection() {
-  const categories = useSelector((state) => state.categories?.items || []);
-  const allProducts = useSelector((state) => state.products?.items || []);
+  const categories = useSelector(selectCategoriesWithProducts);
 
   return (
     <div className="space-y-12 pb-12">
       {categories.map((category) => {
-        // Find products that match this category by id
-        const categoryProducts = category.productIds
-          .map(id => allProducts.find(p => p.id === id))
-          .filter(Boolean);
-
-        // Don't render the section if there are no matching products
-        if (categoryProducts.length === 0) return null;
+        if (category.products.length === 0) return null;
 
         return (
           <section key={category.name}>
@@ -28,10 +20,10 @@ export default function CategoriesSection() {
               </button>
             </div>
             <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
-              {categoryProducts.map((product) => (
-                <ProductCard 
-                  key={product.id} 
-                  product={product} 
+              {category.products.map((product) => (
+                <ProductCard
+                  key={product.id}
+                  product={product}
                 />
               ))}
             </div>

@@ -1,12 +1,11 @@
-import { useState } from 'react';
 import AuthPage from './pages/AuthPage/AuthPage';
 import AppRoutes from './routes/AppRoutes';
 import './App.css';
 
-function App() {
-  const [isAuthenticated, setIsAuthenticated] = useState(true); // Toggle to false to see AuthPage
+const IS_AUTHENTICATED = true;
 
-  if (!isAuthenticated) {
+function App() {
+  if (!IS_AUTHENTICATED) {
     return <AuthPage />;
   }
 

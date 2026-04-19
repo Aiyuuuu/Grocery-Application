@@ -1,10 +1,63 @@
-import React from 'react';
-import { useSelector } from 'react-redux';
-import { Link } from 'react-router-dom';
+import { useEffect, useState } from 'react';
+import { useDispatch, useSelector } from 'react-redux';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { clearSearchQuery, setSearchQuery } from '../../store/HomePage/productsSlice';
+import { selectCartCount, selectSearchQuery } from '../../store/selectors';
+import { getSearchValidationError, normalizeSearchQuery } from '../../utils/search';
 
 export default function TopNavBar({ onToggleSidebar }) {
-  const cartItems = useSelector(state => state.cart.items);
-  const cartCount = cartItems.length;
+  const dispatch = useDispatch();
+  const navigate = useNavigate();
+  const location = useLocation();
+  const cartCount = useSelector(selectCartCount);
+  const searchInput = useSelector(selectSearchQuery);
+  const [searchError, setSearchError] = useState('');
+
+  useEffect(() => {
+    if (!location.pathname.startsWith('/search')) {
+      dispatch(clearSearchQuery());
+      return;
+    }
+
+    const queryFromUrl = new URLSearchParams(location.search).get('q') || '';
+    const normalizedQuery = normalizeSearchQuery(queryFromUrl);
+    dispatch(setSearchQuery(normalizedQuery));
+  }, [location.pathname, location.search, dispatch]);
+
+  const handleSearchChange = (event) => {
+    const nextValue = event.target.value;
+    dispatch(setSearchQuery(nextValue));
+
+    if (searchError) {
+      setSearchError(getSearchValidationError(nextValue));
+    }
+  };
+
+  const handleSearchSubmit = (event) => {
+    event.preventDefault();
+    const validationError = getSearchValidationError(searchInput);
+
+    if (validationError) {
+      setSearchError(validationError);
+      return;
+    }
+
+    const normalizedQuery = normalizeSearchQuery(searchInput);
+    dispatch(setSearchQuery(normalizedQuery));
+    setSearchError('');
+    navigate(`/search?q=${encodeURIComponent(normalizedQuery)}`);
+  };
+
+  const handleClearSearch = () => {
+    setSearchError('');
+    dispatch(clearSearchQuery());
+
+    if (location.pathname.startsWith('/search')) {
+      navigate('/search');
+    }
+  };
+
+  const visibleSearchError = searchError;
 
   return (
     <nav className="fixed top-0 w-full z-50 bg-neutral-950/60 backdrop-blur-xl flex justify-between items-center px-4 md:px-8 py-4 shadow-[0_24_48px_rgba(0,0,0,0.5)]">
@@ -19,15 +72,44 @@ export default function TopNavBar({ onToggleSidebar }) {
         <Link to="/" className="text-2xl font-bold tracking-tight text-white hidden sm:block hover:text-primary transition-colors">CartZen</Link>
         <div className="hidden md:flex gap-8 text-sm font-medium">
           <Link to="/" className="text-emerald-400 font-semibold transition-colors duration-300">Shop</Link>
-          <a className="text-neutral-400 hover:text-emerald-300 transition-colors duration-300" href="#">Curated</a>
-          <a className="text-neutral-400 hover:text-emerald-300 transition-colors duration-300" href="#">Sommelier's Pick</a>
+          <button className="appearance-none bg-transparent border-0 p-0 m-0 text-neutral-400 hover:text-emerald-300 transition-colors duration-300" type="button">Curated</button>
+          <button className="appearance-none bg-transparent border-0 p-0 m-0 text-neutral-400 hover:text-emerald-300 transition-colors duration-300" type="button">Sommelier's Pick</button>
         </div>
       </div>
       <div className="flex items-center gap-6">
-        <div className="relative hidden lg:block">
-          <input className="bg-surface-container-highest border-none rounded-full px-6 py-2 w-80 text-sm focus:ring-1 focus:ring-primary/50 text-on-surface placeholder:text-neutral-500" placeholder="Search curated collection..." type="text"/>
-          <span className="material-symbols-outlined absolute right-4 top-2 text-neutral-500 text-lg">search</span>
-        </div>
+        <form onSubmit={handleSearchSubmit} className="relative hidden lg:block">
+          <input
+            className={`bg-surface-container-highest border-none rounded-full px-6 py-2 pr-16 w-80 text-sm focus:ring-1 text-on-surface placeholder:text-neutral-500 ${visibleSearchError ? 'focus:ring-red-400/70 ring-1 ring-red-400/60' : 'focus:ring-primary/50'}`}
+            placeholder="Search curated collection..."
+            type="text"
+            value={searchInput}
+            onChange={handleSearchChange}
+            aria-label="Search products"
+            aria-invalid={Boolean(visibleSearchError)}
+          />
+          {searchInput && (
+            <button
+              type="button"
+              className="absolute right-9 top-1.5 text-neutral-500 hover:text-on-surface transition-colors"
+              onClick={handleClearSearch}
+              aria-label="Clear search"
+            >
+              <span className="material-symbols-outlined text-lg">close</span>
+            </button>
+          )}
+          <button
+            type="submit"
+            className="absolute right-3 top-1.5 text-neutral-500 hover:text-primary transition-colors"
+            aria-label="Run search"
+          >
+            <span className="material-symbols-outlined text-lg">search</span>
+          </button>
+          {visibleSearchError && (
+            <p className="absolute top-11 left-3 text-[11px] text-red-300 bg-neutral-950/80 px-2 py-1 rounded-md whitespace-nowrap">
+              {visibleSearchError}
+            </p>
+          )}
+        </form>
         <div className="flex items-center gap-4">
           <Link to="/cart" className="relative hover:text-primary transition-colors">
             <span className="material-symbols-outlined">shopping_cart</span>
