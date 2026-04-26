@@ -6,3 +6,4 @@ export { addressesService } from './addressesService';
 export { authService } from './authService';
 export { cartService } from './cartService';
 export { ordersService } from './ordersService';
+export { adminService } from './adminService';

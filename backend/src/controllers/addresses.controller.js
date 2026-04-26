@@ -1,24 +1,30 @@
-const { query } = require('../../db');
+const addressesModel = require('../models/addresses.model');
+
+function parseBooleanInput(value) {
+  if (typeof value === 'boolean') {
+    return value;
+  }
+
+  if (typeof value === 'string') {
+    const normalized = value.trim().toLowerCase();
+    if (normalized === 'true') return true;
+    if (normalized === 'false') return false;
+  }
+
+  return Boolean(value);
+}
 
 function formatAddress(address) {
   return {
     ...address,
-    isDefault: Boolean(address.is_default),
+    isDefault: address.is_default === 'true',
   };
 }
 
 exports.getAddresses = async (req, res, next) => {
   try {
     const userId = req.auth.userId;
-    const addresses = await query(
-      `SELECT id, label, street_address, city, province, postal_code, 
-              phone_number, delivery_instructions,
-              country, latitude, longitude, is_default
-       FROM addresses
-       WHERE user_id = ?
-       ORDER BY is_default DESC, created_at DESC`,
-      [userId]
-    );
+    const addresses = await addressesModel.listAddressesByUser(userId);
 
     res.json(addresses.map(formatAddress));
   } catch (error) {
@@ -31,20 +37,13 @@ exports.getAddressById = async (req, res, next) => {
     const userId = req.auth.userId;
     const { id } = req.params;
 
-    const addresses = await query(
-      `SELECT id, label, street_address, city, province, postal_code,
-              phone_number, delivery_instructions,
-              country, latitude, longitude, is_default
-       FROM addresses
-       WHERE id = ? AND user_id = ?`,
-      [id, userId]
-    );
+    const address = await addressesModel.findAddressByIdForUser(id, userId);
 
-    if (addresses.length === 0) {
+    if (!address) {
       return res.status(404).json({ message: 'Address not found' });
     }
 
-    res.json(formatAddress(addresses[0]));
+    res.json(formatAddress(address));
   } catch (error) {
     next(error);
   }
@@ -55,59 +54,50 @@ exports.createAddress = async (req, res, next) => {
     const userId = req.auth.userId;
     const {
       label,
-      street_address,
+      type,
+      address,
       city,
       province,
       postal_code,
       phone_number,
       delivery_instructions,
-      country,
       latitude,
       longitude,
       isDefault,
     } = req.body;
 
-    // Validate required fields
-    if (!street_address || !city || !country) {
+    if (!address || !city || !province || !postal_code) {
       return res.status(400).json({ 
-        message: 'Street address, city, and country are required' 
+        message: 'address, city, province and postal_code are required'
       });
     }
 
-    // If this is being set as default, unset other defaults
-    if (isDefault) {
-      await query(
-        'UPDATE addresses SET is_default = FALSE WHERE user_id = ?',
-        [userId]
-      );
+    if (type && !['home', 'work', 'other'].includes(type)) {
+      return res.status(400).json({ message: 'type must be one of: home, work, other' });
     }
 
-    const result = await query(
-      `INSERT INTO addresses 
-       (user_id, label, street_address, city, province, postal_code, phone_number, delivery_instructions, country, latitude, longitude, is_default)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-      [
-        userId,
-        label || null,
-        street_address,
-        city,
-        province || null,
-        postal_code || null,
-        phone_number || null,
-        delivery_instructions || null,
-        country,
-        latitude || null,
-        longitude || null,
-        isDefault ? 1 : 0,
-      ]
-    );
+    const isDefaultFlag = parseBooleanInput(isDefault);
 
-    const newAddress = await query(
-      'SELECT id, label, street_address, city, province, postal_code, phone_number, delivery_instructions, country, latitude, longitude, is_default FROM addresses WHERE id = ?',
-      [result.insertId]
-    );
+    if (isDefaultFlag) {
+      await addressesModel.clearDefaultForUser(userId);
+    }
 
-    res.status(201).json(formatAddress(newAddress[0]));
+    const newAddress = await addressesModel.createAddress({
+      userId,
+      label: label || null,
+      type: type || null,
+      address,
+      city,
+      province: province || null,
+      postalCode: postal_code || null,
+      phoneNumber: phone_number || null,
+      deliveryInstructions: delivery_instructions || null,
+      latitude: latitude === undefined || latitude === null || latitude === '' ? null : Number(latitude),
+      longitude: longitude === undefined || longitude === null || longitude === '' ? null : Number(longitude),
+      isDefault: isDefaultFlag ? 'true' : 'false',
+    });
+
+    res.status(201).json(formatAddress(newAddress));
   } catch (error) {
     next(error);
   }
@@ -119,63 +109,55 @@ exports.updateAddress = async (req, res, next) => {
     const { id } = req.params;
     const {
       label,
-      street_address,
+      type,
+      address,
       city,
       province,
       postal_code,
       phone_number,
       delivery_instructions,
-      country,
       latitude,
       longitude,
       isDefault,
     } = req.body;
 
-    // Verify ownership
-    const existing = await query(
-      'SELECT id FROM addresses WHERE id = ? AND user_id = ?',
-      [id, userId]
-    );
+    const existing = await addressesModel.findAddressByIdForUser(id, userId);
 
-    if (existing.length === 0) {
+    if (!existing) {
       return res.status(404).json({ message: 'Address not found' });
     }
 
-    // If this is being set as default, unset other defaults
-    if (isDefault) {
-      await query(
-        'UPDATE addresses SET is_default = FALSE WHERE user_id = ? AND id != ?',
-        [userId, id]
-      );
+    const isDefaultFlag = isDefault === undefined ? undefined : parseBooleanInput(isDefault);
+
+    if (isDefaultFlag) {
+      await addressesModel.clearDefaultForUser(userId, id);
     }
 
-    await query(
-      `UPDATE addresses 
-       SET label = ?, street_address = ?, city = ?, province = ?, postal_code = ?, phone_number = ?, delivery_instructions = ?, country = ?, latitude = ?, longitude = ?, is_default = ?
-       WHERE id = ? AND user_id = ?`,
-      [
-        label || null,
-        street_address || null,
-        city || null,
-        province || null,
-        postal_code || null,
-        phone_number || null,
-        delivery_instructions || null,
-        country || null,
-        latitude || null,
-        longitude || null,
-        isDefault ? 1 : 0,
-        id,
-        userId,
-      ]
-    );
+    const nextType = type === undefined ? existing.type : type;
+    if (nextType && !['home', 'work', 'other'].includes(nextType)) {
+      return res.status(400).json({ message: 'type must be one of: home, work, other' });
+    }
 
-    const updatedAddress = await query(
-      'SELECT id, label, street_address, city, province, postal_code, phone_number, delivery_instructions, country, latitude, longitude, is_default FROM addresses WHERE id = ?',
-      [id]
-    );
+    await addressesModel.updateAddress(id, userId, {
+      label: label === undefined ? existing.label : (label || null),
+      type: nextType || null,
+      address: address === undefined ? existing.address : address,
+      city: city === undefined ? existing.city : city,
+      province: province === undefined ? existing.province : province,
+      postalCode: postal_code === undefined ? existing.postal_code : postal_code,
+      phoneNumber: phone_number === undefined ? existing.phone_number : (phone_number || null),
+      deliveryInstructions:
+        delivery_instructions === undefined
+          ? existing.delivery_instructions
+          : (delivery_instructions || null),
+      latitude: latitude === undefined ? existing.latitude : latitude,
+      longitude: longitude === undefined ? existing.longitude : longitude,
+      isDefault: isDefaultFlag === undefined ? existing.is_default : (isDefaultFlag ? 'true' : 'false'),
+    });
 
-    res.json(formatAddress(updatedAddress[0]));
+    const updatedAddress = await addressesModel.findAddressByIdForUser(id, userId);
+
+    res.json(formatAddress(updatedAddress));
   } catch (error) {
     next(error);
   }
@@ -186,10 +168,7 @@ exports.deleteAddress = async (req, res, next) => {
     const userId = req.auth.userId;
     const { id } = req.params;
 
-    const result = await query(
-      'DELETE FROM addresses WHERE id = ? AND user_id = ?',
-      [id, userId]
-    );
+    const result = await addressesModel.deleteAddress(id, userId);
 
     if (result.affectedRows === 0) {
       return res.status(404).json({ message: 'Address not found' });

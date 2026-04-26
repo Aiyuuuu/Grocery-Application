@@ -3,20 +3,23 @@ const dotenv = require('dotenv');
 
 const app = require('./app');
 const { checkDbConnection, closeDb } = require('./db');
+const { startOrderStatusCron } = require('./src/jobs/orderStatusCron');
 
 dotenv.config({ path: path.join(__dirname, '.env') });
 
-const PORT = Number(process.env.PORT || 3000);
+const PORT = Number(process.env.PORT);
 
 async function startServer() {
   try {
     await checkDbConnection();
+    const stopOrderStatusCron = startOrderStatusCron();
 
     const server = app.listen(PORT, () => {
       console.log(`Backend running on http://localhost:${PORT}`);
     });
 
     const shutdown = async () => {
+      stopOrderStatusCron();
       server.close(async () => {
         await closeDb();
         process.exit(0);

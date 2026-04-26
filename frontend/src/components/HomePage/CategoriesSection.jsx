@@ -13,7 +13,7 @@ export default function CategoriesSection() {
         setLoading(true);
         const [categoriesData, productsData] = await Promise.all([
           categoriesService.getCategories(),
-          productsService.getProducts(),
+          productsService.getActiveProducts(),
         ]);
 
         // Create a map of products by ID

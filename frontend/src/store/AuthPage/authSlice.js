@@ -45,6 +45,18 @@ export const loginUser = createAsyncThunk(
   }
 );
 
+export const upgradeToAdmin = createAsyncThunk(
+  'auth/upgradeToAdmin',
+  async (adminPassword, { rejectWithValue }) => {
+    try {
+      const response = await authService.upgradeAdmin({ adminPassword });
+      return normalizeAuthPayload(response.data);
+    } catch (error) {
+      return rejectWithValue(getApiErrorMessage(error));
+    }
+  }
+);
+
 const authSlice = createSlice({
   name: 'auth',
   initialState,
@@ -97,6 +109,22 @@ const authSlice = createSlice({
       .addCase(loginUser.rejected, (state, action) => {
         state.status = 'failed';
           state.error = action.payload || 'Login failed';
+      })
+      .addCase(upgradeToAdmin.pending, (state) => {
+        state.status = 'loading';
+        state.error = null;
+      })
+      .addCase(upgradeToAdmin.fulfilled, (state, action) => {
+        state.status = 'succeeded';
+        state.token = action.payload.token;
+        state.user = action.payload.user;
+        state.isAuthenticated = Boolean(action.payload.token);
+        state.error = null;
+        saveStoredAuth(action.payload);
+      })
+      .addCase(upgradeToAdmin.rejected, (state, action) => {
+        state.status = 'failed';
+        state.error = action.payload || 'Admin upgrade failed';
       });
   },
 });

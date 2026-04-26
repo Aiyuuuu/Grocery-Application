@@ -1,37 +1,47 @@
 const fs = require('fs');
 const path = require('path');
 const dotenv = require('dotenv');
-const mysql = require('mysql2/promise');
+const { execFileSync } = require('child_process');
+const { query, closeDb } = require('../db');
 
 dotenv.config({ path: path.join(__dirname, '..', '.env') });
 
-async function seedDb() {
-  const dbHost = process.env.DB_HOST || 'localhost';
-  const dbPort = Number(process.env.DB_PORT || 3306);
-  const dbUser = process.env.DB_USER || 'root';
-  const dbPassword = process.env.DB_PASSWORD || '';
+function parseSqlStatements(sqlText) {
+  return sqlText
+    .split(/\r?\n/)
+    .filter((line) => !line.trim().startsWith('--'))
+    .join('\n')
+    .split(';')
+    .map((statement) => statement.trim())
+    .filter(Boolean);
+}
 
-  const seedPath = path.join(__dirname, '..', 'database', 'seed.sql');
+async function seedDb() {
+  const setupSchemaScript = path.join(__dirname, 'create-schema.js');
+  execFileSync(process.execPath, [setupSchemaScript], { stdio: 'inherit' });
+  const seedFile = process.env.DB_SEED_FILE || 'seed.sql';
+  const seedPath = path.join(__dirname, '..', 'database', seedFile);
   const seedSql = fs.readFileSync(seedPath, 'utf8');
 
-  const connection = await mysql.createConnection({
-    host: dbHost,
-    port: dbPort,
-    user: dbUser,
-    password: dbPassword,
-    multipleStatements: true,
-  });
+  const statements = parseSqlStatements(seedSql);
 
-  try {
-    await connection.query(seedSql);
-    console.log('Database seeded successfully from database/seed.sql');
-  } finally {
-    await connection.end();
+  console.log(`Executing ${seedFile}... Found ${statements.length} statements`);
+
+  for (const statement of statements) {
+    try {
+      await query(statement);
+    } catch (error) {
+      console.error(`\n❌ ERROR EXECUTING STATEMENT:\n${statement}\n`);
+      throw error; 
+    }
   }
+
+  console.log(`✅ ${seedFile} executed successfully`);
 }
 
 seedDb().catch((error) => {
   console.error('Database seed failed:', error.message);
-  console.error('Check your MySQL server status and backend/.env credentials.');
   process.exit(1);
+}).finally(async () => {
+  await closeDb();
 });

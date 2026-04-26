@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { logout } from '../../store/AuthPage/authSlice';
-import { selectCartCount } from '../../store/selectors';
+import { selectAuthUser, selectCartCount } from '../../store/selectors';
 import { getSearchValidationError, normalizeSearchQuery } from '../../utils/search';
 
 export default function TopNavBar({ onToggleSidebar }) {
@@ -10,9 +10,11 @@ export default function TopNavBar({ onToggleSidebar }) {
   const navigate = useNavigate();
   const location = useLocation();
   const cartCount = useSelector(selectCartCount);
+  const authUser = useSelector(selectAuthUser);
   const [searchInput, setSearchInput] = useState('');
   const [searchError, setSearchError] = useState('');
   const [isSearchDirty, setIsSearchDirty] = useState(false);
+  const adminTargetPath = String(authUser?.role || '').toLowerCase() === 'admin' ? '/admin' : '/admin-access';
 
   const isSearchRoute = location.pathname.startsWith('/search');
   const queryFromUrl = new URLSearchParams(location.search).get('q') || '';
@@ -77,8 +79,7 @@ export default function TopNavBar({ onToggleSidebar }) {
         <Link to="/" className="text-2xl font-bold tracking-tight text-white hidden sm:block hover:text-primary transition-colors">CartZen</Link>
         <div className="hidden md:flex gap-8 text-sm font-medium">
           <Link to="/" className="text-emerald-400 font-semibold transition-colors duration-300">Shop</Link>
-          <button className="appearance-none bg-transparent border-0 p-0 m-0 text-neutral-400 hover:text-emerald-300 transition-colors duration-300" type="button">Curated</button>
-          <button className="appearance-none bg-transparent border-0 p-0 m-0 text-neutral-400 hover:text-emerald-300 transition-colors duration-300" type="button">Sommelier's Pick</button>
+          <Link to={adminTargetPath} className="text-neutral-400 hover:text-emerald-300 transition-colors duration-300">Admin</Link>
         </div>
       </div>
       <div className="flex items-center gap-6">

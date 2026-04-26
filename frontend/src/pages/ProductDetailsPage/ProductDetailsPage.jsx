@@ -14,6 +14,7 @@ import {
   parseEditedQuantity,
 } from '../../utils/quantity';
 import { UNIT_SCALE } from '../../constants/cart';
+import { formatPKR } from '../../utils/currency';
 import NotFoundPage from '../404Page/NotFoundPage';
 
 export default function ProductDetailsPage() {
@@ -121,9 +122,9 @@ export default function ProductDetailsPage() {
   const calculateTotal = () => {
     if (typeof product.price === 'number') {
       const multiplier = isVariable ? quantity / UNIT_SCALE : quantity;
-      return (product.price * multiplier).toFixed(2);
+      return product.price * multiplier;
     }
-    return '0.00';
+    return 0;
   };
 
   return (
@@ -170,19 +171,10 @@ export default function ProductDetailsPage() {
                   </h1>
                 </div>
                 <p className="text-xl font-body text-primary font-medium flex items-center gap-2">
-                  ${product.price.toFixed(2)}
+                  {formatPKR(product.price)}
                   {product.unit && isVariable && <span className="text-sm font-normal text-on-surface-variant uppercase">/ {product.unit}</span>}
                 </p>
                 
-                {product.tags && product.tags.length > 0 && (
-                  <div className="flex flex-wrap gap-1.5 mt-3">
-                    {product.tags.map((tag, idx) => (
-                      <span key={idx} className="bg-surface-container-highest text-on-surface-variant text-[10px] px-2 py-0.5 rounded-sm font-medium">
-                        {tag}
-                      </span>
-                    ))}
-                  </div>
-                )}
               </div>
 
               <div className="flex flex-col sm:flex-row gap-3">
@@ -285,7 +277,7 @@ export default function ProductDetailsPage() {
                   className="w-full sm:flex-1 bg-surface-container border border-outline-variant/30 text-on-surface font-semibold py-4 px-8 rounded-md flex items-center justify-center gap-3 shadow-lg"
                 >
                   <span className="text-on-surface-variant">Total:</span>
-                  <span className="text-xl font-bold text-primary">${calculateTotal()}</span>
+                  <span className="text-xl font-bold text-primary">{formatPKR(calculateTotal())}</span>
                 </div>
               </div>
               

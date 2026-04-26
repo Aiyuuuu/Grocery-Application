@@ -1,33 +1,49 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { ordersService } from '../../api/services';
+import { formatPKR } from '../../utils/currency';
 
 const filters = [
   { value: 'all', label: 'All Orders' },
-  { value: 'delivered', label: 'Delivered' },
-  { value: 'in-transit', label: 'In Transit' },
-  { value: 'cancelled', label: 'Cancelled' },
+  { value: 'placed', label: 'Placed' },
+  { value: 'packaged', label: 'Packaged' },
+  { value: 'enroute', label: 'En Route' },
+  { value: 'arrived', label: 'Arrived' },
 ];
 
 function getStatusStyles(status) {
-  if (status === 'delivered') {
+  if (status === 'arrived') {
     return {
       chip: 'bg-emerald-500/20 text-emerald-200',
+      icon: 'task_alt',
+    };
+  }
+
+  if (status === 'enroute') {
+    return {
+      chip: 'bg-sky-500/20 text-sky-200',
       icon: 'local_shipping',
     };
   }
 
-  if (status === 'in-transit') {
+  if (status === 'packaged') {
     return {
-      chip: 'bg-sky-500/20 text-sky-200',
-      icon: 'shopping_bag',
+      chip: 'bg-amber-500/20 text-amber-200',
+      icon: 'inventory_2',
     };
   }
 
   return {
-    chip: 'bg-red-500/20 text-red-200',
-    icon: 'block',
+    chip: 'bg-indigo-500/20 text-indigo-200',
+    icon: 'shopping_bag',
   };
+}
+
+function getStatusLabel(status) {
+  if (status === 'arrived') return 'Arrived';
+  if (status === 'enroute') return 'En Route';
+  if (status === 'packaged') return 'Packaged';
+  return 'Placed';
 }
 
 function formatDate(value) {
@@ -36,13 +52,6 @@ function formatDate(value) {
     month: 'short',
     day: 'numeric',
   });
-}
-
-function formatCurrency(value) {
-  return new Intl.NumberFormat('en-US', {
-    style: 'currency',
-    currency: 'USD',
-  }).format(value);
 }
 
 export default function OrderHistoryPage() {
@@ -77,10 +86,11 @@ export default function OrderHistoryPage() {
     return orders.filter((order) => order.status === activeFilter);
   }, [activeFilter, orders]);
 
-  const deliveredCount = orders.filter((order) => order.status === 'delivered').length;
-  const inTransitCount = orders.filter((order) => order.status === 'in-transit').length;
+  const arrivedCount = orders.filter((order) => order.status === 'arrived').length;
+  const enRouteCount = orders.filter((order) => order.status === 'enroute').length;
   const lifetimeSpend = orders.reduce((sum, order) => sum + order.total, 0);
 
+  // console.log(orders)
   return (
     <section className="w-full px-6 lg:px-12 2xl:px-24 pb-16">
       <header className="mb-8 rounded-2xl border border-outline-variant/20 bg-surface-container-low p-6 lg:p-8 shadow-[0_24px_48px_rgba(0,0,0,0.45)]">
@@ -101,16 +111,16 @@ export default function OrderHistoryPage() {
 
         <div className="mt-6 grid grid-cols-1 gap-3 sm:grid-cols-3">
           <article className="rounded-xl bg-surface-container p-4">
-            <p className="text-xs uppercase tracking-wider text-on-surface-variant">Delivered Orders</p>
-            <p className="mt-2 text-2xl font-headline font-bold text-on-surface">{deliveredCount}</p>
+            <p className="text-xs uppercase tracking-wider text-on-surface-variant">Arrived Orders</p>
+            <p className="mt-2 text-2xl font-headline font-bold text-on-surface">{arrivedCount}</p>
           </article>
           <article className="rounded-xl bg-surface-container p-4">
-            <p className="text-xs uppercase tracking-wider text-on-surface-variant">In Transit</p>
-            <p className="mt-2 text-2xl font-headline font-bold text-on-surface">{inTransitCount}</p>
+            <p className="text-xs uppercase tracking-wider text-on-surface-variant">En Route</p>
+            <p className="mt-2 text-2xl font-headline font-bold text-on-surface">{enRouteCount}</p>
           </article>
           <article className="rounded-xl bg-surface-container p-4">
             <p className="text-xs uppercase tracking-wider text-on-surface-variant">Lifetime Spend</p>
-            <p className="mt-2 text-2xl font-headline font-bold text-primary">{formatCurrency(lifetimeSpend)}</p>
+            <p className="mt-2 text-2xl font-headline font-bold text-primary">{formatPKR(lifetimeSpend)}</p>
           </article>
         </div>
       </header>
@@ -163,13 +173,7 @@ export default function OrderHistoryPage() {
         {!loading && !error ? (
           visibleOrders.map((order) => {
             const statusUi = getStatusStyles(order.status);
-            const statusLabel = order.status === 'in-transit'
-              ? 'In Transit'
-              : order.status === 'delivered'
-                ? 'Delivered'
-                : order.status === 'cancelled'
-                  ? 'Cancelled'
-                  : 'Placed';
+            const statusLabel = getStatusLabel(order.status);
 
             return (
               <article
@@ -193,7 +197,7 @@ export default function OrderHistoryPage() {
                       {statusLabel}
                     </span>
                     <div className="text-right">
-                      <p className="text-lg font-bold text-on-surface">{formatCurrency(order.total)}</p>
+                      <p className="text-lg font-bold text-on-surface">{formatPKR(order.total)}</p>
                       <p className="text-xs text-on-surface-variant">{order.itemCount} items</p>
                     </div>
                     <button

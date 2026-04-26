@@ -1,39 +1,37 @@
-const { query } = require('../../db');
+const categoriesModel = require('../models/categories.model');
 
 function normalizeProductIds(productIds) {
   if (!productIds) {
     return [];
   }
 
-  let normalized = productIds;
-  if (typeof normalized === 'string') {
-    try {
-      normalized = JSON.parse(normalized);
-    } catch (_error) {
-      return [];
-    }
+  if (Array.isArray(productIds)) {
+    return productIds.filter(Boolean);
   }
 
-  return Array.isArray(normalized) ? normalized.filter(Boolean) : [];
+  if (typeof productIds === 'string') {
+    return productIds
+      .split(',')
+      .map((item) => item.trim())
+      .filter(Boolean);
+  }
+
+  return [];
 }
 
 function formatCategory(category) {
+  const rawProductIds = category.productids ?? category.productIds;
+  const { productids, productIds: _productIds, ...rest } = category;
+
   return {
-    ...category,
-    productIds: normalizeProductIds(category.productIds),
+    ...rest,
+    productIds: normalizeProductIds(rawProductIds),
   };
 }
 
 exports.getCategories = async (req, res, next) => {
   try {
-    const categories = await query(
-      `SELECT c.id, c.name, 
-              JSON_ARRAYAGG(pc.product_id) as productIds
-       FROM categories c
-       LEFT JOIN product_categories pc ON c.id = pc.category_id
-       GROUP BY c.id, c.name
-       ORDER BY c.name ASC`
-    );
+    const categories = await categoriesModel.listCategories();
     
     res.json(categories.map(formatCategory));
   } catch (error) {
@@ -44,21 +42,13 @@ exports.getCategories = async (req, res, next) => {
 exports.getCategoryById = async (req, res, next) => {
   try {
     const { id } = req.params;
-    const categories = await query(
-      `SELECT c.id, c.name,
-              JSON_ARRAYAGG(pc.product_id) as productIds
-       FROM categories c
-       LEFT JOIN product_categories pc ON c.id = pc.category_id
-       WHERE c.id = ?
-       GROUP BY c.id, c.name`,
-      [id]
-    );
+    const category = await categoriesModel.findCategoryById(id);
 
-    if (categories.length === 0) {
+    if (!category) {
       return res.status(404).json({ message: 'Category not found' });
     }
 
-    res.json(formatCategory(categories[0]));
+    res.json(formatCategory(category));
   } catch (error) {
     next(error);
   }
@@ -72,20 +62,14 @@ exports.createCategory = async (req, res, next) => {
       return res.status(400).json({ message: 'Category name is required' });
     }
 
-    const result = await query(
-      'INSERT INTO categories (name) VALUES (?)',
-      [name.trim()]
-    );
-
-    res.status(201).json({ 
-      id: result.insertId, 
-      name: name.trim(),
-      productIds: []
-    });
-  } catch (error) {
-    if (error.code === 'ER_DUP_ENTRY') {
+    const existing = await categoriesModel.findCategoryByName(name.trim());
+    if (existing) {
       return res.status(409).json({ message: 'Category already exists' });
     }
+
+    const created = await categoriesModel.createCategory(name.trim());
+    res.status(201).json(formatCategory({ ...created, productids: null }));
+  } catch (error) {
     next(error);
   }
 };
@@ -99,10 +83,12 @@ exports.updateCategory = async (req, res, next) => {
       return res.status(400).json({ message: 'Category name is required' });
     }
 
-    const result = await query(
-      'UPDATE categories SET name = ? WHERE id = ?',
-      [name.trim(), id]
-    );
+    const duplicate = await categoriesModel.findCategoryByName(name.trim());
+    if (duplicate && Number(duplicate.id) !== Number(id)) {
+      return res.status(409).json({ message: 'Category name already exists' });
+    }
+
+    const result = await categoriesModel.updateCategoryName(id, name.trim());
 
     if (result.affectedRows === 0) {
       return res.status(404).json({ message: 'Category not found' });
@@ -110,9 +96,6 @@ exports.updateCategory = async (req, res, next) => {
 
     res.json({ id: parseInt(id), name: name.trim() });
   } catch (error) {
-    if (error.code === 'ER_DUP_ENTRY') {
-      return res.status(409).json({ message: 'Category name already exists' });
-    }
     next(error);
   }
 };
@@ -121,10 +104,7 @@ exports.deleteCategory = async (req, res, next) => {
   try {
     const { id } = req.params;
 
-    const result = await query(
-      'DELETE FROM categories WHERE id = ?',
-      [id]
-    );
+    const result = await categoriesModel.deleteCategory(id);
 
     if (result.affectedRows === 0) {
       return res.status(404).json({ message: 'Category not found' });

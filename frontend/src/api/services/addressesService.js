@@ -1,41 +1,68 @@
 import { apiClient } from '../client';
 
+function parseBoolean(value) {
+  if (typeof value === 'boolean') {
+    return value;
+  }
+
+  if (typeof value === 'string') {
+    return value.trim().toLowerCase() === 'true';
+  }
+
+  return Boolean(value);
+}
+
+function toSafeType(value) {
+  return ['home', 'work', 'other'].includes(value) ? value : 'other';
+}
+
+function toSafeNumber(value, fallback) {
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? parsed : fallback;
+}
+
 function toUiAddress(apiAddress) {
-  const street = apiAddress.street_address || '';
+  const street = apiAddress.address || '';
   const city = apiAddress.city || 'Karachi';
   const state = apiAddress.province || 'Sindh';
   const zipCode = apiAddress.postal_code || '';
+  const type = toSafeType(apiAddress.type || 'other');
+  const isDefault = parseBoolean(apiAddress.is_default ?? apiAddress.isDefault);
 
   return {
     id: apiAddress.id,
-    name: apiAddress.label || 'Address',
-    type: 'home',
+    name: apiAddress.label || type[0].toUpperCase() + type.slice(1),
+    label: apiAddress.label || null,
+    type,
     street,
     city,
     state,
     zipCode,
     phoneNumber: apiAddress.phone_number || '',
     instructions: apiAddress.delivery_instructions || '',
-    latitude: Number(apiAddress.latitude) || 24.8607,
-    longitude: Number(apiAddress.longitude) || 67.0011,
-    isDefault: Boolean(apiAddress.is_default ?? apiAddress.isDefault),
+    latitude: toSafeNumber(apiAddress.latitude, 24.8607),
+    longitude: toSafeNumber(apiAddress.longitude, 67.0011),
+    isDefault,
+    is_default: isDefault ? 'true' : 'false',
     fullAddress: `${street}\n${city}, ${state} ${zipCode}`.trim(),
   };
 }
 
 function toApiAddress(payload) {
+  const type = toSafeType(payload.type || 'other');
+
   return {
     label: payload.name || null,
-    street_address: payload.street,
+    type,
+    address: payload.street,
     city: payload.city,
     province: payload.state,
     postal_code: payload.zipCode,
     phone_number: payload.phoneNumber || null,
     delivery_instructions: payload.instructions || null,
-    country: 'Pakistan',
-    latitude: payload.latitude,
-    longitude: payload.longitude,
-    isDefault: Boolean(payload.isDefault),
+    latitude: toSafeNumber(payload.latitude, 24.8607),
+    longitude: toSafeNumber(payload.longitude, 67.0011),
+    isDefault: parseBoolean(payload.isDefault),
   };
 }
 

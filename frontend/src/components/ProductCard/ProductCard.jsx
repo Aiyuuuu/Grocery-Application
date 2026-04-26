@@ -11,6 +11,7 @@ import {
   getStepAndMax,
   parseEditedQuantity,
 } from '../../utils/quantity';
+import { formatPKR } from '../../utils/currency';
 
 export default function ProductCard({
   product,
@@ -18,8 +19,7 @@ export default function ProductCard({
 }) {
   const dispatch = useDispatch();
   const navigate = useNavigate();
-  const displayPrice = typeof product.price === 'number' ? product.price.toFixed(2) : product.price;
-
+  const displayPrice = formatPKR(product.price);
   const isVariable = product.saleType === 'variable';
   const unit = product.unit || 'items';
   const { step, maxQuantity } = getStepAndMax(isVariable);
@@ -105,21 +105,12 @@ export default function ProductCard({
         <h4 className="font-bold text-sm mb-1 truncate">{product.name}</h4>
         <p className="text-[10px] text-neutral-500 mb-2 truncate">{product.description}</p>
 
-        {product.tags && product.tags.length > 0 && (
-          <div className="flex flex-wrap gap-1 mb-2">
-            {product.tags.map((tag, idx) => (
-              <span key={idx} className="bg-surface-container-highest text-on-surface-variant text-[9px] px-1.5 py-0.5 rounded-sm font-medium">
-                {tag}
-              </span>
-            ))}
-          </div>
-        )}
       </div>
 
       <div className="flex items-end mt-auto pt-2 min-h-[2.75rem]">
         {!isEditing && (
           <div className="flex flex-col flex-grow">
-            <span className="font-bold text-sm text-primary">${displayPrice}</span>
+            <span className="font-bold text-sm text-primary">{displayPrice}</span>
             <span className="text-[10px] text-neutral-500 font-medium">
               {displayUnitText}
             </span>

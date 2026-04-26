@@ -5,7 +5,8 @@ import MapComponent from '../../components/Addresses/MapComponent/MapComponent';
 import { fetchCart } from '../../store/CartPage/cartSlice';
 import { selectCartItems } from '../../store/selectors';
 import { productsService, addressesService, ordersService } from '../../api/services';
-import { UNIT_SCALE, FREE_SHIPPING_THRESHOLD, STANDARD_SHIPPING, TAX_RATE } from '../../constants/cart';
+import { UNIT_SCALE, FREE_SHIPPING_THRESHOLD, STANDARD_SHIPPING, TAX_PERCENT } from '../../constants/cart';
+import { formatPKR } from '../../utils/currency';
 import styles from './CheckoutPage.module.css';
 
 function getDefaultAddress(addresses) {
@@ -29,7 +30,7 @@ const paymentMethods = [
     icon: 'credit_card',
   },
   {
-    id: 'wallet',
+    id: 'digital',
     title: 'Digital Wallet',
     description: 'Use your preferred payment app at checkout.',
     icon: 'account_balance_wallet',
@@ -73,13 +74,14 @@ export default function CheckoutPage() {
     .filter((entry) => entry.product);
 
   // Calculate totals
-  const subtotal = cartDetails.reduce((sum, { item, product }) => {
+  const subtotalRaw = cartDetails.reduce((sum, { item, product }) => {
     const multiplier = product.saleType === 'variable' ? item.quantity / UNIT_SCALE : item.quantity;
     return sum + multiplier * product.price;
   }, 0);
 
+  const subtotal = Math.round(subtotalRaw);
   const shipping = subtotal > FREE_SHIPPING_THRESHOLD || subtotal === 0 ? 0 : STANDARD_SHIPPING;
-  const taxes = subtotal * TAX_RATE;
+  const taxes = Math.round((subtotal * TAX_PERCENT) / 100);
   const total = subtotal + shipping + taxes;
 
   useEffect(() => {
@@ -251,7 +253,7 @@ export default function CheckoutPage() {
                       <h3>{product.name}</h3>
                       <p>Qty {quantityLabel}</p>
                     </div>
-                    <span>${((product.saleType === 'variable' ? item.quantity / UNIT_SCALE : item.quantity) * product.price).toFixed(2)}</span>
+                      <span>{formatPKR((product.saleType === 'variable' ? item.quantity / UNIT_SCALE : item.quantity) * product.price)}</span>
                   </div>
                 );
               })}
@@ -260,19 +262,19 @@ export default function CheckoutPage() {
             <div className={styles.totals}>
               <div>
                 <span>Subtotal</span>
-                <strong>${subtotal.toFixed(2)}</strong>
+                  <strong>{formatPKR(subtotal)}</strong>
               </div>
               <div>
                 <span>Shipping</span>
-                <strong>{shipping === 0 ? 'Free' : `$${shipping.toFixed(2)}`}</strong>
+                  <strong>{shipping === 0 ? 'Free' : formatPKR(shipping)}</strong>
               </div>
               <div>
                 <span>Taxes</span>
-                <strong>${taxes.toFixed(2)}</strong>
+                  <strong>{formatPKR(taxes)}</strong>
               </div>
               <div className={styles.totalRow}>
                 <span>Total</span>
-                <strong>${total.toFixed(2)}</strong>
+                  <strong>{formatPKR(total)}</strong>
               </div>
             </div>
 

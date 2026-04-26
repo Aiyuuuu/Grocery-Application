@@ -16,7 +16,7 @@ export default function SearchResultsPage() {
   useEffect(() => {
     const fetchProducts = async () => {
       try {
-        const productsData = await productsService.getProducts();
+        const productsData = await productsService.getActiveProducts();
         setAllProducts(productsData);
       } catch (error) {
         console.error('Failed to fetch products:', error);
@@ -31,8 +31,7 @@ export default function SearchResultsPage() {
     if (!needle) return [];
 
     return allProducts.filter((product) => {
-      const tags = Array.isArray(product.tags) ? product.tags.join(' ') : '';
-      const haystack = `${product.name || ''} ${product.description || ''} ${tags}`.toLowerCase();
+      const haystack = `${product.name || ''} ${product.description || ''}`.toLowerCase();
       return haystack.includes(needle);
     });
   };

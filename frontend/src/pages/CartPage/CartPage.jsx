@@ -4,7 +4,8 @@ import { Link, useNavigate } from 'react-router-dom';
 import { addToCartAsync } from '../../store/CartPage/cartSlice';
 import { productsService } from '../../api/services';
 import { selectCartItems } from '../../store/selectors';
-import { UNIT_SCALE, FREE_SHIPPING_THRESHOLD, STANDARD_SHIPPING, TAX_RATE } from '../../constants/cart';
+import { UNIT_SCALE, FREE_SHIPPING_THRESHOLD, STANDARD_SHIPPING, TAX_PERCENT } from '../../constants/cart';
+import { formatPKR } from '../../utils/currency';
 import {
   convertEditValueForUnitChange,
   formatQuantity,
@@ -101,7 +102,7 @@ function CartItemLine({ item, product }) {
         <div className="flex-1 min-w-0">
           <h3 className="font-headline text-base sm:text-lg font-semibold text-on-surface truncate mb-1">{product.name}</h3>
           <p className="font-body text-on-surface-variant text-xs sm:text-sm truncate">
-            ${product.price.toFixed(2)} {isVariable ? `/ ${unit}` : product.unit_weight ? `${product.unit_weight} ${unit}` : ''}
+            {formatPKR(product.price)} {isVariable ? `/ ${unit}` : product.unit_weight ? `${product.unit_weight} ${unit}` : ''}
           </p>
         </div>
       </div>
@@ -168,7 +169,7 @@ function CartItemLine({ item, product }) {
         </div>
 
         <div className="w-20 sm:w-24 text-right flex-shrink-0">
-          <span className="font-headline text-lg sm:text-xl font-bold text-on-surface">${itemTotal.toFixed(2)}</span>
+          <span className="font-headline text-lg sm:text-xl font-bold text-on-surface">{formatPKR(itemTotal)}</span>
         </div>
 
         <button
@@ -215,13 +216,14 @@ export default function CartPage() {
     .filter((entry) => entry.product);
 
   // Calculate totals
-  const subtotal = cartDetails.reduce((sum, { item, product }) => {
+  const subtotalRaw = cartDetails.reduce((sum, { item, product }) => {
     const multiplier = product.saleType === 'variable' ? item.quantity / UNIT_SCALE : item.quantity;
     return sum + multiplier * product.price;
   }, 0);
 
+  const subtotal = Math.round(subtotalRaw);
   const shipping = subtotal > FREE_SHIPPING_THRESHOLD || subtotal === 0 ? 0 : STANDARD_SHIPPING;
-  const taxes = subtotal * TAX_RATE;
+  const taxes = Math.round((subtotal * TAX_PERCENT) / 100);
   const total = subtotal + shipping + taxes;
 
   if (loading) {
@@ -261,22 +263,22 @@ export default function CartPage() {
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 font-body text-sm sm:text-base">
               <div className="flex justify-between sm:flex-col sm:justify-start sm:gap-1 text-on-surface-variant border-b sm:border-b-0 sm:border-r border-outline-variant/10 pb-2 sm:pb-0 sm:pr-4">
                 <span>Subtotal</span>
-                <span className="text-on-surface font-semibold text-lg">${subtotal.toFixed(2)}</span>
+                <span className="text-on-surface font-semibold text-lg">{formatPKR(subtotal)}</span>
               </div>
               <div className="flex justify-between sm:flex-col sm:justify-start sm:gap-1 text-on-surface-variant border-b sm:border-b-0 sm:border-r border-outline-variant/10 pb-2 sm:pb-0 sm:pr-4">
                 <span>Shipping</span>
-                <span className="text-primary font-semibold text-lg">{shipping === 0 ? 'Free (Premium)' : `$${shipping.toFixed(2)}`}</span>
+                <span className="text-primary font-semibold text-lg">{shipping === 0 ? 'Free (Premium)' : formatPKR(shipping)}</span>
               </div>
               <div className="flex justify-between sm:flex-col sm:justify-start sm:gap-1 text-on-surface-variant pb-2 sm:pb-0">
-                <span>Taxes <span className="text-xs opacity-50">(5%)</span></span>
-                <span className="text-on-surface font-semibold text-lg">${taxes.toFixed(2)}</span>
+                <span>Taxes <span className="text-xs opacity-50">({TAX_PERCENT}%)</span></span>
+                <span className="text-on-surface font-semibold text-lg">{formatPKR(taxes)}</span>
               </div>
             </div>
 
             <div className="pt-2 border-outline-variant/20 flex flex-col sm:flex-row justify-between items-start sm:items-end gap-4 mt-2">
               <div className="flex flex-col">
                 <span className="font-headline text-on-surface-variant text-xs uppercase tracking-widest mb-1">Total Limit</span>
-                <span className="font-headline text-4xl sm:text-[2.5rem] font-bold text-primary leading-none">${total.toFixed(2)}</span>
+                <span className="font-headline text-4xl sm:text-[2.5rem] font-bold text-primary leading-none">{formatPKR(total)}</span>
               </div>
               <Link to="/checkout" className="bg-gradient-to-br from-primary to-primary-container text-on-primary-container rounded-md font-label font-bold text-lg py-4 px-8 w-full sm:w-auto hover:brightness-110 transition-all active:scale-[0.98] flex items-center justify-center gap-2 shadow-lg">
                 Checkout Now

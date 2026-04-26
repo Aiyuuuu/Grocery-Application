@@ -23,9 +23,7 @@ export default function AddressForm({ address, onSave, onCancel }) {
   const addressTypeOptions = [
     { value: 'home', label: 'Home', icon: 'home' },
     { value: 'work', label: 'Work', icon: 'work' },
-    { value: 'gym', label: 'Gym', icon: 'fitness_center' },
-    { value: 'school', label: 'School', icon: 'school' },
-    { value: 'palette', label: 'Other', icon: 'palette' },
+    { value: 'other', label: 'Other', icon: 'location_on' },
   ];
 
   const validateForm = () => {

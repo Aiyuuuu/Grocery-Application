@@ -6,6 +6,6 @@ export const FIXED_STEP = 1;
 export const VARIABLE_MAX_QUANTITY = 50000;
 export const FIXED_MAX_QUANTITY = 20;
 
-export const TAX_RATE = 0.05;
+export const TAX_PERCENT = 5;
 export const FREE_SHIPPING_THRESHOLD = 50;
-export const STANDARD_SHIPPING = 5.99;
+export const STANDARD_SHIPPING = 100;

@@ -7,13 +7,24 @@ import CheckoutPage from '../pages/CheckoutPage/CheckoutPage';
 import SearchResultsPage from '../pages/SearchResultsPage/SearchResultsPage';
 import AddressesPage from '../pages/AddressesPage/AddressesPage';
 import OrderHistoryPage from '../pages/OrderHistoryPage/OrderHistoryPage';
+import AdminDashboardPage from '../pages/AdminDashboardPage/AdminDashboardPage';
+import AdminAccessPage from '../pages/AdminAccessPage/AdminAccessPage';
 import NotFoundPage from '../pages/404Page/NotFoundPage';
 import AppLayout from '../components/Layout/AppLayout';
+import AdminAccessRoute from './AdminAccessRoute';
 
 export default function AppRoutes() {
   return (
     <Routes>
       <Route path="/auth" element={<Navigate to="/" replace />} />
+      <Route
+        path="/admin"
+        element={(
+          <AdminAccessRoute>
+            <AdminDashboardPage />
+          </AdminAccessRoute>
+        )}
+      />
       <Route element={<AppLayout />}>
         <Route path="/" element={<HomePage />} />
         <Route path="/search" element={<SearchResultsPage />} />
@@ -22,6 +33,7 @@ export default function AppRoutes() {
         <Route path="/checkout" element={<CheckoutPage />} />
         <Route path="/addresses" element={<AddressesPage />} />
         <Route path="/orders" element={<OrderHistoryPage />} />
+        <Route path="/admin-access" element={<AdminAccessPage />} />
       </Route>
       <Route path="*" element={<NotFoundPage />} />
     </Routes>
