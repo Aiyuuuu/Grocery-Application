@@ -13,8 +13,9 @@
     "db:create-schema": "node scripts/create-schema.js",
     "db:init": "node scripts/init-db.js",
     "db:check": "node scripts/check-db.js",
-    "db:seed": "node scripts/seed-db.js",
-    "db:seed:admin": "node scripts/admin-seed.js"
+    "db:drop": "node scripts/delete-db.js",
+    "db:seed": "node scripts/seed.js",
+    "db:seed:admin": "node scripts/seed.js"
   },
   "dependencies": {
     "cors": "^2.8.6",
